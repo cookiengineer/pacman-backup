@@ -43,8 +43,8 @@ This will output the pacman command that you should verify manually before execu
 ```bash
 # Machine without internet connection
 
-sudo cp /run/media/cookiengineer/pacman-usbstick/sync/*.db /var/lib/pacman/sync/;'
-pacman-backup upgrade /run/media/cookiengineer/pacman-usbstick;'
+sudo cp /run/media/$USER/pacman-usbstick/sync/*.db /var/lib/pacman/sync/;'
+pacman-backup upgrade /run/media/$USER/pacman-usbstick;'
 ```
 
 
