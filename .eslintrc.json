@@ -1,0 +1,56 @@
+{
+	"env": {
+		"browser": false,
+		"es6": true,
+		"node": true
+	},
+	"extends": "eslint:recommended",
+	"parserOptions": {
+		"ecmaVersion": 2018,
+		"sourceType": "script"
+	},
+	"overrides": [{
+		"files": [ "*.mjs" ],
+		"rules": {}
+	}, {
+		"files": [ "extern/base.mjs" ],
+		"rules": {
+			"no-control-regex": "off",
+			"no-undef": "off"
+		}
+	}],
+	"rules": {
+		"no-restricted-globals": [
+			"error",
+			{ "name": "__dirname"       },
+			{ "name": "__filename"      },
+			{ "name": "Buffer"          },
+			{ "name": "exports"         },
+			{ "name": "module"          },
+			{ "name": "TextDecoder"     },
+			{ "name": "TextEncoder"     },
+			{ "name": "URL"             },
+			{ "name": "URLSearchParams" }
+		],
+		"arrow-parens": [
+			"error",
+			"always"
+		],
+		"indent": [
+			"error",
+			"tab"
+		],
+		"linebreak-style": [
+			"error",
+			"unix"
+		],
+		"quotes": [
+			"error",
+			"single"
+		],
+		"semi": [
+			"error",
+			"always"
+		]
+	}
+}

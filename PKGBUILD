@@ -1,7 +1,7 @@
 # Maintainer: Cookie Engineer <@cookiengineer>
 
 pkgname=pacman-backup
-pkgver=0.1
+pkgver=r7.e8dd759
 pkgrel=1
 pkgdesc='Backup tool for off-the-grid updates via portable USB sticks or (mesh) LAN networks.'
 arch=('i686' 'x86_64' 'armv6h' 'armv7h' 'aarch64')

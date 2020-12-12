@@ -1,21 +1,32 @@
 #!/usr/bin/env node
 
-const _fs     = require('fs');
-const _http   = require('http');
-const _os     = require('os');
-const _path   = require('path');
-const _spawn  = require('child_process').spawnSync;
-const _ARCH   = (arch => {
+const Buffer  = require('buffer').Buffer;
+const dirname = require('path').dirname;
+const fs      = require('fs');
+const http    = require('http');
+const os      = require('os');
+const spawn   = require('child_process').spawnSync;
+
+const ARCH   = ((arch) => {
 	if (arch === 'x64') return 'x86_64';
 	if (arch === 'arm') return 'armv7h';
 	return 'any';
 })(process.arch);
-const _ARGS   = Array.from(process.argv).slice(2);
-const _CACHE  = [];
-const _MIRROR = 'https://arch.eckner.net/archlinux/$repo/os/$arch';
-const _ACTION = /^(archive|cleanup|download|serve|upgrade)$/g.test((_ARGS[0] || '')) ? _ARGS[0] : null;
-const _FOLDER = _ARGS.find(v => v.startsWith('/')) || null;
-const _SERVER = _ARGS.find(v => (v.includes(':') || v.includes('.'))) || _ARGS.find(a => a !== _ACTION && a !== _FOLDER) || null;
+const ARGS   = Array.from(process.argv).slice(2);
+const ACTION = /^(archive|cleanup|download|serve|upgrade)$/g.test((ARGS[0] || '')) ? ARGS[0] : null;
+const FOLDER = ARGS.find((v) => v.startsWith('/')) || null;
+const MIRROR = 'https://arch.eckner.net/archlinux/$repo/os/$arch';
+const SERVER = ARGS.find((v) => (v.includes(':') || v.includes('.'))) || ARGS.find((v) => v !== ACTION && v !== FOLDER) || null;
+const USER   = process.env.SUDO_USER || process.env.USER || process.env.USERNAME;
+
+
+
+console.log(':: pacman-backup ' + ACTION);
+console.log('   -> FOLDER: ' + FOLDER);
+console.log('   -> MIRROR: ' + MIRROR);
+console.log('   -> SERVER: ' + SERVER);
+console.log('   -> USER:   ' + USER);
+console.log('');
 
 
 
@@ -23,7 +34,7 @@ const _SERVER = _ARGS.find(v => (v.includes(':') || v.includes('.'))) || _ARGS.f
  * HELPERS
  */
 
-const _config = (server) => `
+const toConfig = (server) => `
 [options]
 HoldPkg           = pacman glibc
 Architecture      = auto
@@ -44,7 +55,7 @@ Server = http://${server}:15678
 [multilib]
 Server = http://${server}:15678`;
 
-const _copy = function(source, target, callback) {
+const copy_file = (source, target, callback) => {
 
 	let called = false;
 	let done   = (err) => {
@@ -55,18 +66,18 @@ const _copy = function(source, target, callback) {
 	};
 
 
-	let read  = _fs.createReadStream(source);
-	let write = _fs.createWriteStream(target);
+	let read  = fs.createReadStream(source);
+	let write = fs.createWriteStream(target);
 
-	read.on('error',  err => done(err));
-	write.on('error', err => done(err));
-	write.on('close', _   => done(null));
+	read.on('error',  (err) => done(err));
+	write.on('error', (err) => done(err));
+	write.on('close', ()    => done(null));
 
 	read.pipe(write);
 
 };
 
-const _diff = function(a, b) {
+const diff_version = (a, b) => {
 
 	let chunk_a = '';
 	let chunk_b = '';
@@ -92,21 +103,21 @@ const _diff = function(a, b) {
 
 };
 
-const _download = function(url, callback) {
+const download = (url, callback) => {
 
-	_http.get(url, res => {
+	http.get(url, (response) => {
 
 		let buffers = [];
 
-		res.setEncoding('binary');
-		res.on('data', chunk => {
+		response.setEncoding('binary');
+		response.on('data', (chunk) => {
 			buffers.push(Buffer.from(chunk, 'binary'));
 		});
-		res.on('end', _ => {
+		response.on('end', () => {
 			callback(Buffer.concat(buffers));
 		});
 
-	}).on('error', err => {
+	}).on('error', () => {
 		callback(null);
 	});
 
@@ -118,11 +129,11 @@ const _mkdir = function(path) {
 
 	try {
 
-		let stat1 = _fs.lstatSync(path);
+		let stat1 = fs.lstatSync(path);
 		if (stat1.isSymbolicLink()) {
 
-			let tmp   = _fs.realpathSync(path);
-			let stat2 = _fs.lstatSync(tmp);
+			let tmp   = fs.realpathSync(path);
+			let stat2 = fs.lstatSync(tmp);
 			if (stat2.isDirectory()) {
 				is_directory = true;
 			}
@@ -135,17 +146,17 @@ const _mkdir = function(path) {
 
 		if (err.code === 'ENOENT') {
 
-			if (_mkdir(_path.dirname(path)) === true) {
-				_fs.mkdirSync(path, 0o777 & (~process.umask()));
+			if (_mkdir(dirname(path)) === true) {
+				fs.mkdirSync(path, 0o777 & (~process.umask()));
 			}
 
 			try {
 
-				let stat2 = _fs.lstatSync(path);
+				let stat2 = fs.lstatSync(path);
 				if (stat2.isSymbolicLink()) {
 
-					let tmp   = _fs.realpathSync(path);
-					let stat3 = _fs.lstatSync(tmp);
+					let tmp   = fs.realpathSync(path);
+					let stat3 = fs.lstatSync(tmp);
 					if (stat3.isDirectory()) {
 						is_directory = true;
 					}
@@ -155,6 +166,7 @@ const _mkdir = function(path) {
 				}
 
 			} catch (err) {
+				// Ignore
 			}
 
 		}
@@ -165,7 +177,7 @@ const _mkdir = function(path) {
 
 };
 
-const _parse_pkgname = function(file) {
+const parse_pkgname = (file) => {
 
 	if (file.endsWith('.pkg.tar.xz')) {
 		file = file.substr(0, file.length - 11);
@@ -188,7 +200,7 @@ const _parse_pkgname = function(file) {
 		let ch    = chunk.charAt(0);
 
 		if (
-			/^([A-Za-z0-9_+\.]+)$/g.test(chunk)
+			/^([A-Za-z0-9_+.]+)$/g.test(chunk)
 			&& /[A-Za-z]/g.test(ch)
 		) {
 			if (name.length > 0) name += '-';
@@ -218,26 +230,51 @@ const _parse_pkgname = function(file) {
 
 };
 
-const _read_file = function(path, callback) {
+const read_databases = (path, callback) => {
 
-	_fs.readFile(path, (err, data) => {
+	let cache = [];
+
+	fs.readdir(path, (err, files) => {
+
+		if (!err) {
+
+			files.filter((file) => {
+				return file.endsWith('.db');
+			}).forEach((file) => {
+				cache.push(file);
+			});
+
+			callback(cache);
+
+		}
+
+	});
+
+};
+
+const read_file = (path, callback) => {
+
+	fs.readFile(path, (err, data) => {
 		callback(err ? null : data);
 	});
 
 };
 
-const _read_pkgs = function(path, callback) {
+const read_packages = (path, callback) => {
 
 	let cache = [];
 
-	_fs.readdir(path, (err, files) => {
+	fs.readdir(path, (err, files) => {
 
 		if (!err) {
 
-			files
-				.filter(file => file.endsWith('.pkg.tar.xz') || file.endsWith('.pkg.tar.zst'))
-				.filter(file => file.includes('-'))
-				.forEach(file => cache.push(file));
+			files.filter((file) => {
+				return file.endsWith('.pkg.tar.xz') || file.endsWith('.pkg.tar.zst');
+			}).filter((file) => {
+				return file.includes('-');
+			}).forEach((file) => {
+				cache.push(file);
+			});
 
 			callback(cache);
 
@@ -247,29 +284,9 @@ const _read_pkgs = function(path, callback) {
 
 };
 
-const _read_sync = function(path, callback) {
+const read_upgrades = (callback) => {
 
-	let cache = [];
-
-	_fs.readdir(path, (err, files) => {
-
-		if (!err) {
-
-			files
-				.filter(file => file.endsWith('.db'))
-				.forEach(file => cache.push(file));
-
-			callback(cache);
-
-		}
-
-	});
-
-};
-
-const _read_upgrades = function(callback) {
-
-	let handle = _spawn('pacman', [
+	let handle = spawn('pacman', [
 		'-Sup',
 		'--print-format',
 		'%n /// %v /// %r /// %l'
@@ -283,10 +300,10 @@ const _read_upgrades = function(callback) {
 
 	if (stderr.length === 0) {
 
-		let lines = stdout.split('\n').filter(l => l.startsWith('::') === false && l.includes('///'));
+		let lines = stdout.split('\n').filter((l) => l.startsWith('::') === false && l.includes('///'));
 		if (lines.length > 0) {
 
-			upgrades = lines.map(line => {
+			upgrades = lines.map((line) => {
 
 				let file = line.split(' /// ')[3].split('/').pop();
 				let arch = null;
@@ -317,17 +334,17 @@ const _read_upgrades = function(callback) {
 
 };
 
-const _remove = function(target, callback) {
+const remove_file = (target, callback) => {
 
-	_fs.unlink(target, err => {
+	fs.unlink(target, (err) => {
 		callback(err ? err : null);
 	});
 
 };
 
-const _serve = function(path, res) {
+const serve = (path, res) => {
 
-	_read_file(path, buffer => {
+	read_file(path, (buffer) => {
 
 		let file = path.split('/').pop();
 
@@ -353,9 +370,9 @@ const _serve = function(path, res) {
 
 };
 
-const _serve_with_range = function(path, range, res) {
+const serve_with_range = (path, range, res) => {
 
-	_read_file(path, buffer => {
+	read_file(path, (buffer) => {
 
 		let file = path.split('/').pop();
 
@@ -389,9 +406,9 @@ const _serve_with_range = function(path, range, res) {
 
 };
 
-const _sort_by_version = function(a, b) {
+const sortByVersion = function(a, b) {
 
-	let [ diff_a, diff_b ] = _diff(a, b);
+	let [ diff_a, diff_b ] = diff_version(a, b);
 
 	if (diff_a === '' && diff_b === '') {
 		return 0;
@@ -493,7 +510,7 @@ const _sort_by_version = function(a, b) {
 
 };
 
-const _write = function(target, buffer, callback) {
+const write_file = (target, buffer, callback) => {
 
 	let encoding = 'binary';
 
@@ -501,7 +518,7 @@ const _write = function(target, buffer, callback) {
 		encoding = 'utf8';
 	}
 
-	_fs.writeFile(target, buffer, encoding, (err) => {
+	fs.writeFile(target, buffer, encoding, (err) => {
 
 		if (!err) {
 			callback(true);
@@ -519,54 +536,54 @@ const _write = function(target, buffer, callback) {
  * IMPLEMENTATION
  */
 
-if (_ACTION === 'archive' && _FOLDER !== null) {
+if (ACTION === 'archive' && FOLDER !== null) {
 
-	_mkdir(_FOLDER + '/pkgs');
-	_mkdir(_FOLDER + '/sync');
+	_mkdir(FOLDER + '/pkgs');
+	_mkdir(FOLDER + '/sync');
 
-	_read_pkgs(_FOLDER + '/pkgs', cache => {
+	read_packages(FOLDER + '/pkgs', (cache) => {
 
-		_read_pkgs('/var/cache/pacman/pkg', packages => {
+		read_packages('/var/cache/pacman/pkg', (packages) => {
 
-			packages
-				.filter(file => cache.includes(file) === false)
-				.forEach(file => {
+			packages.filter((file) => {
+				return cache.includes(file) === false;
+			}).forEach((file) => {
 
-					_copy('/var/cache/pacman/pkg/' + file, _FOLDER + '/pkgs/' + file, err => {
-						if (!err) console.log(':: archived pkgs/' + file);
-					});
-
+				copy_file('/var/cache/pacman/pkg/' + file, FOLDER + '/pkgs/' + file, (err) => {
+					if (!err) console.log(':: archived pkgs/' + file);
 				});
+
+			});
 
 		});
 
 	});
 
-	_read_sync('/var/lib/pacman/sync', databases => {
+	read_databases('/var/lib/pacman/sync', (databases) => {
 
-		databases
-			.filter(file => file !== 'testing.db')
-			.forEach(file => {
+		databases.filter((file) => {
+			return file !== 'testing.db';
+		}).forEach((file) => {
 
-				_copy('/var/lib/pacman/sync/' + file, _FOLDER + '/sync/' + file, err => {
-					if (!err) console.log(':: archived sync/' + file);
-				});
-
+			copy_file('/var/lib/pacman/sync/' + file, FOLDER + '/sync/' + file, (err) => {
+				if (!err) console.log(':: archived sync/' + file);
 			});
+
+		});
 
 	});
 
-} else if (_ACTION === 'cleanup') {
+} else if (ACTION === 'cleanup') {
 
 	let pkgs_folder = '/var/cache/pacman/pkg';
 
-	if (_FOLDER !== null) {
-		pkgs_folder = _FOLDER + '/pkgs';
-		_mkdir(_FOLDER + '/pkgs');
+	if (FOLDER !== null) {
+		pkgs_folder = FOLDER + '/pkgs';
+		_mkdir(FOLDER + '/pkgs');
 	}
 
 
-	_read_pkgs(pkgs_folder, cache => {
+	read_packages(pkgs_folder, (cache) => {
 
 		let database = {
 			'any':    {},
@@ -575,9 +592,9 @@ if (_ACTION === 'archive' && _FOLDER !== null) {
 			'x86':    {}
 		};
 
-		cache.forEach(file => {
+		cache.forEach((file) => {
 
-			let pkg = _parse_pkgname(file);
+			let pkg = parse_pkgname(file);
 			if (pkg === null) {
 
 				console.log(':! Cannot recognize version scheme of ' + file);
@@ -606,22 +623,19 @@ if (_ACTION === 'archive' && _FOLDER !== null) {
 			let tree = Object.values(database[arch]);
 			if (tree.length > 0) {
 
-				tree
-					.filter(pkg => pkg.versions.length > 1)
-					.forEach(pkg => {
+				tree.filter((pkg) => {
+					return pkg.versions.length > 1;
+				}).forEach((pkg) => {
 
-						pkg.versions
-							.sort(_sort_by_version)
-							.slice(1)
-							.forEach(version => {
+					pkg.versions.sort(sortByVersion).slice(1).forEach((version) => {
 
-								_remove(pkgs_folder + '/' + pkg.name + '-' + version + '-' + pkg.arch + '.pkg.tar.xz', err => {
-									if (!err) console.log(':: purged "' + pkg.name + '-' + version + '" (' + pkg.arch + ')');
-								});
-
-							});
+						remove_file(pkgs_folder + '/' + pkg.name + '-' + version + '-' + pkg.arch + '.pkg.tar.xz', (err) => {
+							if (!err) console.log(':: purged "' + pkg.name + '-' + version + '" (' + pkg.arch + ')');
+						});
 
 					});
+
+				});
 
 			}
 
@@ -629,29 +643,29 @@ if (_ACTION === 'archive' && _FOLDER !== null) {
 
 	});
 
-} else if (_ACTION === 'download' && _SERVER !== null) {
+} else if (ACTION === 'download' && SERVER !== null) {
 
 	let pkgs_folder = '/var/cache/pacman/pkg';
 	let sync_folder = '/var/lib/pacman/sync';
 
-	if (_FOLDER !== null) {
-		pkgs_folder = _FOLDER + '/pkgs';
-		sync_folder = _FOLDER + '/sync';
-		_mkdir(_FOLDER + '/pkgs');
-		_mkdir(_FOLDER + '/sync');
+	if (FOLDER !== null) {
+		pkgs_folder = FOLDER + '/pkgs';
+		sync_folder = FOLDER + '/sync';
+		_mkdir(FOLDER + '/pkgs');
+		_mkdir(FOLDER + '/sync');
 	}
 
 
 	let on_download_complete = (pkgs_folder, packages) => {
 
-		let upgrades = packages.filter(pkg => pkg._success === true).map(pkg => pkg.file);
+		let upgrades = packages.filter((pkg) => pkg._success === true).map((pkg) => pkg.file);
 		if (upgrades.length > 0) {
 			console.log('');
 			console.log(':: Use this to install upgrades from cache:');
 			console.log('   cd "' + pkgs_folder + '"; sudo pacman -U ' + upgrades.join(' ') + ';');
 		}
 
-		let downloads = packages.filter(pkg => pkg._success === false).map(pkg => pkg.name);
+		let downloads = packages.filter((pkg) => pkg._success === false).map((pkg) => pkg.name);
 		if (downloads.length > 0) {
 			console.log('');
 			console.log(':: Use this to download upgrades into cache:');
@@ -661,38 +675,38 @@ if (_ACTION === 'archive' && _FOLDER !== null) {
 	};
 
 
-	_write('/tmp/pacman-backup.conf', _config(_SERVER), result => {
+	write_file('/tmp/pacman-backup.conf', toConfig(SERVER), (result) => {
 
 		if (result === true) {
 
-			let sync_handle = _spawn('pacman', [ '-Sy', '--config', '/tmp/pacman-backup.conf' ], {
+			let sync_handle = spawn('pacman', [ '-Sy', '--config', '/tmp/pacman-backup.conf' ], {
 				cwd: sync_folder
 			});
 
 			let stderr = (sync_handle.stderr || '').toString().trim();
 			if (stderr.length === 0) {
 
-				_read_upgrades(upgrades => {
+				read_upgrades((upgrades) => {
 
 					if (upgrades.length > 0) {
 
-						_read_pkgs(pkgs_folder, cache => {
+						read_packages(pkgs_folder, (cache) => {
 
-							upgrades.forEach(pkg => {
+							upgrades.forEach((pkg) => {
 								pkg._success = cache.includes(pkg.file);
 							});
 
 
-							let downloads = upgrades.filter(pkg => pkg._success === false);
+							let downloads = upgrades.filter((pkg) => pkg._success === false);
 							if (downloads.length > 0) {
 
 								downloads.forEach((pkg, d) => {
 
-									_download('http://' + _SERVER + ':15678/' + pkg.file, buffer => {
+									download('http://' + SERVER + ':15678/' + pkg.file, (buffer) => {
 
 										if (buffer !== null && buffer.length > 0) {
 
-											_write(pkgs_folder + '/' + pkg.file, buffer, err => {
+											write_file(pkgs_folder + '/' + pkg.file, buffer, (err) => {
 
 												if (!err) console.log(':: downloaded ' + pkg.name + '-' + pkg.version);
 												pkg._success = true;
@@ -723,43 +737,49 @@ if (_ACTION === 'archive' && _FOLDER !== null) {
 
 			} else {
 
-				console.log(':! Cannot synchronize database with "' + _SERVER + '".');
+				console.log(':! Cannot synchronize database with "' + SERVER + '".');
 				console.log(stderr);
 
 				process.exit(1);
 
 			}
 
+		} else {
+
+			console.log(':! Cannot write to /tmp/pacman-backup.conf.');
+
+			process.exit(1);
+
 		}
 
 	});
 
-} else if (_ACTION === 'download') {
+} else if (ACTION === 'download') {
 
 	let pkgs_folder = '/var/cache/pacman/pkg';
 
-	if (_FOLDER !== null) {
-		pkgs_folder = _FOLDER + '/pkgs';
-		_mkdir(_FOLDER + '/pkgs');
+	if (FOLDER !== null) {
+		pkgs_folder = FOLDER + '/pkgs';
+		_mkdir(FOLDER + '/pkgs');
 	}
 
 
-	_read_upgrades(packages => {
+	read_upgrades((packages) => {
 
 		if (packages.length > 0) {
 
-			_read_pkgs(pkgs_folder, cache => {
+			read_packages(pkgs_folder, (cache) => {
 
-				let downloads = packages.filter(pkg => cache.includes(pkg.file) === false);
+				let downloads = packages.filter((pkg) => cache.includes(pkg.file) === false);
 				if (downloads.length > 0) {
 
 					console.log('');
 					console.log(':: Copy/Paste this into a Download Manager of your choice:');
 					console.log('');
 
-					downloads.forEach(pkg => {
-						let url = _MIRROR;
-						url = url.replace('$arch', _ARCH);
+					downloads.forEach((pkg) => {
+						let url = MIRROR;
+						url = url.replace('$arch', ARCH);
 						url = url.replace('$repo', pkg.repo);
 						console.log(url + '/' + pkg.file);
 					});
@@ -772,31 +792,37 @@ if (_ACTION === 'archive' && _FOLDER !== null) {
 
 	});
 
-} else if (_ACTION === 'serve') {
+} else if (ACTION === 'serve') {
 
 	let pkgs_folder = '/var/cache/pacman/pkg';
 	let sync_folder = '/var/lib/pacman/sync';
 
-	if (_FOLDER !== null) {
-		pkgs_folder = _FOLDER + '/pkgs';
-		sync_folder = _FOLDER + '/sync';
-		_mkdir(_FOLDER + '/pkgs');
-		_mkdir(_FOLDER + '/sync');
+	if (FOLDER !== null) {
+		pkgs_folder = FOLDER + '/pkgs';
+		sync_folder = FOLDER + '/sync';
+		_mkdir(FOLDER + '/pkgs');
+		_mkdir(FOLDER + '/sync');
 	}
 
 
 	let database = [];
 
-	_fs.readdir(sync_folder, (err, files) => {
+	fs.readdir(sync_folder, (err, files) => {
 
 		if (!err) {
-			files.filter(file => file.endsWith('.db')).forEach(file => database.push(file));
+
+			files.filter((file) => {
+				return file.endsWith('.db');
+			}).forEach((file) => {
+				database.push(file);
+			});
+
 		}
 
 	});
 
 
-	let server = _http.createServer((req, res) => {
+	let server = http.createServer((req, res) => {
 
 		let range = null;
 
@@ -826,17 +852,17 @@ if (_ACTION === 'archive' && _FOLDER !== null) {
 		if (file.endsWith('.tar.xz') || file.endsWith('.tar.zst')) {
 
 			if (range !== null) {
-				_serve_with_range(pkgs_folder + '/' + file, range, res);
+				serve_with_range(pkgs_folder + '/' + file, range, res);
 			} else {
-				_serve(pkgs_folder + '/' + file, res);
+				serve(pkgs_folder + '/' + file, res);
 			}
 
 		} else if ((file.endsWith('.db') || file.endsWith('.db.sig')) && database.includes(file)) {
 
 			if (range !== null) {
-				_serve_with_range(sync_folder + '/' + file, range, res);
+				serve_with_range(sync_folder + '/' + file, range, res);
 			} else {
-				_serve(sync_folder + '/' + file, res);
+				serve(sync_folder + '/' + file, res);
 			}
 
 		} else {
@@ -849,7 +875,7 @@ if (_ACTION === 'archive' && _FOLDER !== null) {
 
 	});
 
-	server.on('error', err => {
+	server.on('error', (err) => {
 
 		if (err.code === 'EADDRINUSE') {
 
@@ -872,13 +898,14 @@ if (_ACTION === 'archive' && _FOLDER !== null) {
 	try {
 		server.listen(15678);
 	} catch (err) {
+		// Ignore
 	}
 
 
-	setTimeout(_ => {
+	setTimeout(() => {
 
-		let hostname   = (_spawn('hostname').stdout || '').toString().trim();
-		let interfaces = Object.values(_os.networkInterfaces()).flat().filter(iface => iface.internal === false);
+		let hostname   = (spawn('hostname').stdout || '').toString().trim();
+		let interfaces = Object.values(os.networkInterfaces()).flat().filter((iface) => iface.internal === false);
 
 		if (hostname !== '') {
 
@@ -896,7 +923,7 @@ if (_ACTION === 'archive' && _FOLDER !== null) {
 			console.log(':: Use this to download from this machine:');
 			console.log('');
 
-			interfaces.forEach(iface => {
+			interfaces.forEach((iface) => {
 				console.log('pacman-backup download "' + iface.address + '";');
 			});
 
@@ -904,34 +931,34 @@ if (_ACTION === 'archive' && _FOLDER !== null) {
 
 	}, 250);
 
-} else if (_ACTION === 'upgrade') {
+} else if (ACTION === 'upgrade') {
 
 	let pkgs_folder = '/var/cache/pacman/pkg';
 
-	if (_FOLDER !== null) {
-		pkgs_folder = _FOLDER + '/pkgs';
-		_mkdir(_FOLDER + '/pkgs');
+	if (FOLDER !== null) {
+		pkgs_folder = FOLDER + '/pkgs';
+		_mkdir(FOLDER + '/pkgs');
 	}
 
 
-	_read_upgrades(packages => {
+	read_upgrades((packages) => {
 
 		if (packages.length > 0) {
 
-			_read_pkgs(pkgs_folder, cache => {
+			read_packages(pkgs_folder, (cache) => {
 
-				let upgrades = packages.filter(pkg => cache.includes(pkg.file) === true);
+				let upgrades = packages.filter((pkg) => cache.includes(pkg.file) === true);
 				if (upgrades.length > 0) {
 					console.log('');
 					console.log(':: Use this to install upgrades from cache:');
-					console.log('   cd "' + pkgs_folder + '"; sudo pacman -U ' + upgrades.map(pkg => pkg.file).join(' ') + ';');
+					console.log('   cd "' + pkgs_folder + '"; sudo pacman -U ' + upgrades.map((pkg) => pkg.file).join(' ') + ';');
 				}
 
-				let downloads = packages.filter(pkg => cache.includes(pkg.file) === false);
+				let downloads = packages.filter((pkg) => cache.includes(pkg.file) === false);
 				if (downloads.length > 0) {
 					console.log('');
 					console.log(':: Use this to download upgrades into cache:');
-					console.log('   cd "' + pkgs_folder + '"; sudo pacman -Sw --cachedir "' + pkgs_folder + '" ' + downloads.map(pkg => pkg.name).join(' ') + ';');
+					console.log('   cd "' + pkgs_folder + '"; sudo pacman -Sw --cachedir "' + pkgs_folder + '" ' + downloads.map((pkg) => pkg.name).join(' ') + ';');
 				}
 
 			});
@@ -943,7 +970,7 @@ if (_ACTION === 'archive' && _FOLDER !== null) {
 } else {
 
 	console.log('pacman-backup');
-	console.log('Backup tool for off-the-grid upgrades via portable USB sticks or LAN networks.');
+	console.log('Backup tool for off-the-grid upgrades via portable USB drives or LAN networks.');
 	console.log('');
 	console.log('Usage: pacman-backup [Action] [Folder]');
 	console.log('');
@@ -959,38 +986,40 @@ if (_ACTION === 'archive' && _FOLDER !== null) {
 	console.log('    cleanup    removes outdated packages from folder');
 	console.log('    upgrade    prints pacman command to upgrade from folder');
 	console.log('');
-	console.log('    serve      serves packages');
+	console.log('    serve      serves packages as local network server');
 	console.log('    download   downloads packages to folder from server');
 	console.log('');
-	console.log('USB Example:')
 	console.log('');
-	console.log('    # 1: Machine with internet connection');
+	console.log('USB Drive Example:');
+	console.log('');
+	console.log('    # Step 1: Machine with internet connection');
+	console.log('');
 	console.log('    sudo pacman -Sy;');
 	console.log('    sudo pacman -Suw;');
-	console.log('    pacman-backup archive /run/media/cookiengineer/pacman-usbstick;');
-	console.log('    pacman-backup cleanup /run/media/cookiengineer/pacman-usbstick;');
+	console.log('');
+	console.log('    pacman-backup archive /run/media/' + USER + '/pacman-usbdrive;');
+	console.log('    pacman-backup cleanup /run/media/' + USER + '/pacman-usbdrive;');
+	console.log('');
 	console.log('    sync;');
 	console.log('');
-	console.log('    # 2: User walks to other machine without internet connection');
-	console.log('    #    and inserts same USB stick there ...');
+	console.log('    # Step 2: ' + USER + ' walks to machine without internet connection and mounts same USB drive there ...');
 	console.log('');
-	console.log('    # 3: Machine without internet connection');
-	console.log('    sudo cp /run/media/cookiengineer/pacman-usbstick/sync/*.db /var/lib/pacman/sync/;');
-	console.log('    pacman-backup upgrade /run/media/cookiengineer/pacman-usbstick;');
+	console.log('    sudo cp /run/media/' + USER + '/pacman-usbdrive/sync/*.db /var/lib/pacman/sync/;');
+	console.log('    pacman-backup upgrade /run/media/' + USER + '/pacman-usbdrive;');
 	console.log('');
-	console.log('LAN Example:')
+	console.log('LAN Server Example:');
 	console.log('');
-	console.log('    # 1: Machine with internet connection');
-	console.log('    #    with example IP 192.168.0.10');
+	console.log('    # 1: Machine with internet connection and example IP 192.168.0.10');
+	console.log('');
 	console.log('    sudo pacman -Sy;');
 	console.log('    sudo pacman -Suw;');
 	console.log('    pacman-backup serve;');
 	console.log('');
-	console.log('    # 2: User walks to other machine with LAN connection');
-	console.log('    #    and downloads package cache from pacman-backup server ...');
+	console.log('    # Step 2: User walks to machine with LAN connection to server...');
 	console.log('');
-	console.log('    # 3: Machine without internet connection');
-	console.log('    #    "Server = http://192.168.0.10:15678" in /etc/pacman.d/mirrorlist');
+	console.log('    # sudo echo "Server = http://192.168.0.10:15678" > /etc/pacman.d/mirrorlist');
+	console.log('');
+	console.log('    # Alternatively, use sudo pacman -Sy && sudo pacman -Suw;');
 	console.log('    sudo pacman-backup download 192.168.0.10');
 	console.log('    pacman-backup upgrade');
 	console.log('');

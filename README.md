@@ -6,7 +6,7 @@ Backup tool for off-the-grid updates via portable USB sticks or (mesh) LAN netwo
 
 ## Share Updates via USB Drive
 
-In the below example, make sure that `pacman-usbstick` is writable.
+In the below example, make sure that `pacman-usbdrive` is writable.
 Replace the path with the correct one that points to your mounted USB drive.
 
 **Step 1**:
@@ -24,11 +24,11 @@ The `archive` action will also copy the necessary database files for `pacman -Sy
 sudo pacman -Sy;
 sudo pacman -Suw;
 
-pacman-backup archive /run/media/$USER/pacman-usbstick;
-pacman-backup cleanup /run/media/$USER/pacman-usbstick;
+pacman-backup archive /run/media/$USER/pacman-usbdrive;
+pacman-backup cleanup /run/media/$USER/pacman-usbdrive;
 sync;
 
-# Then, unmount the USB drive
+# Unmount the USB drive and walk to other machine
 ```
 
 **Step 2**:
@@ -43,8 +43,11 @@ This will output the pacman command that you should verify manually before execu
 ```bash
 # Machine without internet connection
 
-sudo cp /run/media/$USER/pacman-usbstick/sync/*.db /var/lib/pacman/sync/;
-pacman-backup upgrade /run/media/$USER/pacman-usbstick;
+sudo cp /run/media/$USER/pacman-usbdrive/sync/*.db /var/lib/pacman/sync/;
+pacman-backup upgrade /run/media/$USER/pacman-usbdrive;
+
+# :: Use this to install upgrades from cache:
+#    (...) pacman -U command (...)
 ```
 
 
@@ -240,6 +243,8 @@ pacman-backup upgrade;
 pacman-backup upgrade /source/folder;
 ```
 
+### upgrade (Partial Upgrades)
+
 `upgrade` also prints out a command for missing packages that need downloading.
 
 In the scenario that the local database says that more packages need to be downloaded
@@ -251,6 +256,18 @@ than the "online machine" (so that more packages need to be downloaded to fully
 upgrade the "offline machine").
 
 Then you can simply copy/paste the generated command to a text file and execute it
-next time you're online - in order to automatically prepare everything that's
-necessary for the "offline machine".
+next time you're online - in order to automatically download everything that's
+required for the "offline machine".
 
+```bash
+# Example output for partial upgrade scenario
+# (executed on machine without internet connection)
+
+pacman-backup upgrade 1.3.3.7;
+
+# :: Use this to install upgrades from cache:
+#    (...) pacman -U command (...)
+
+# :: Use this to download upgrades into cache:
+#    (...) pacman -Sw --cachedir command (...)
+```
