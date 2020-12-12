@@ -147,27 +147,33 @@ pacman-backup archive /target/folder;
 
 ### cleanup
 
-`cleanup` allows to cleanup the local package cache (if no folder is specified), or to
-cleanup a folder's package cache (if a folder is specified).
-folder structure.
+`cleanup` allows to cleanup the package cache in a way that only the latest version of
+each package is kept (for each architecture).
+
+If no folder is specified, it will clean up `/var/cache/pacman/pkg`.
+If a folder is specified, it will clean up `$FOLDER/pkgs`.
 
 ```bash
-# cleanup /var/cache/pacman/pkg and keep only latest version of each package (for each architecture)
+# cleanup /var/cache/pacman/pkg
 
 sudo pacman-backup cleanup;
 ```
 
 ```bash
-# cleanup /target/folder/pkgs and keep only latest version of each package (for each architecture)
+# cleanup /target/folder/pkgs
 
 pacman-backup cleanup /target/folder;
 ```
 
 ### download
 
-`download` allows to download packages from a `pacman-backup serve` based server, or if
-no server is specified, to generate a download list of package URLs that you can use for
-your download manager of choice (e.g. uGet or jdownloader).
+`download` allows to download packages from a `pacman-backup serve` based server.
+
+If no folder is specified, it will download to `/var/cache/pacman/pkg`.
+If a folder is specified, it will download to `$FOLDER/pkgs`.
+
+If no server is specified, it generates a download list of package URLs that
+you can use for your download manager of choice (e.g. uGet or jdownloader).
 
 ```bash
 # download packages to /var/cache/pacman/pkg
@@ -191,9 +197,10 @@ pacman-backup download;
 
 ### serve
 
-`serve` allows to start a `pacman` server that can be used as a local mirror. If a folder
-is specified, it serves the package cache in that folder. If no folder is specified, it
-serves from the `/var/cache/pacman/pkgs` and `/var/lib/pacman/sync` folders.
+`serve` allows to start a `pacman` server that can be used as a local mirror.
+
+If no folder is specified, it will serve from `/var/cache/pacman/pkg` and `/var/lib/pacman/sync`.
+If a folder is specified, it will serve from `$FOLDER/pkgs` and `$FOLDER/sync`.
 
 ```bash
 # serve packages from /var/cache/pacman/pkg
@@ -214,6 +221,9 @@ pacman-backup serve /source/folder;
 `upgrade` allows to generate an executable `pacman` command that uses the specified
 cache folder as a package source by leveraging the `--cachedir` parameter.
 
+If no folder is specified, it will upgrade from `/var/cache/pacman/pkg`.
+If a folder is specified, it will upgrade from `$FOLDER/pkgs`.
+
 ```bash
 # generate upgrade command via packages from /var/cache/pacman/pkg
 
@@ -226,14 +236,17 @@ pacman-backup upgrade;
 pacman-backup upgrade /source/folder;
 ```
 
-`upgrade` also also prints out a command for missing packages that need downloading.
+`upgrade` also prints out a command for missing packages that need downloading.
 
 In the scenario that the local database says that more packages need to be downloaded
 to update everything, it will output an additional command that is prepared to let
 `pacman` download the packages to the specified folder.
 
 This is helpful in the scenario that the "offline machine" has more packages installed
-than the "online machine", so that you can just copy/paste the command to a text file,
-and next time you are online, you can execute it to prepare everything that's
-necessary for the offline machine.
+than the "online machine" (so that more packages need to be downloaded to fully
+upgrade the "offline machine").
+
+Then you can simply copy/paste the generated command to a text file and execute it
+next time you're online - in order to automatically prepare everything that's
+necessary for the "offline machine".
 
