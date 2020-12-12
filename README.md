@@ -60,6 +60,7 @@ In the below example, the machine with internet connection has the IP `192.168.0
 
 ```bash
 # Machine with internet connection
+
 sudo pacman -Sy;
 sudo pacman -Suw;
 
@@ -77,6 +78,8 @@ Use `pacman-backup upgrade` to update from the local pacman cache.
 This will output the pacman command that you should verify manually before executing it.
 
 ```bash
+# Machine without internet connection
+
 sudo pacman-backup download 192.168.0.10;
 pacman-backup upgrade;
 ```
@@ -112,6 +115,7 @@ pacman-backup serve;
 Modify the `/etc/pacman.d/mirrorlist` to have as a first entry the following line:
 
 ```conf
+# Machine without internet connection
 # Pacman Mirrorlist for local server
 
 Server = http://192.168.0.10:15678
@@ -120,6 +124,8 @@ Server = http://192.168.0.10:15678
 Use `pacman -Sy` and `pacman -Su` to update from the Cache Proxy.
 
 ```bash
+# Machine without internet connection
+
 sudo pacman -Sy;
 sudo pacman -Su; # or use -Suw
 ```
