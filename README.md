@@ -6,6 +6,9 @@ Backup tool for off-the-grid updates via portable USB sticks or (mesh) LAN netwo
 
 ## Share Updates via USB Drive
 
+In the below example, make sure that `pacman-usbstick` is writable.
+Replace the path with the correct one that points to your mounted USB drive.
+
 **Step 1**:
 
 On the machine with internet connection, insert and mount the USB drive.
@@ -14,9 +17,6 @@ Use `pacman-backup archive` to copy the package cache to the backup folder.
 Use `pacman-backup cleanup` to remain only the latest version of each package.
 
 The `archive` action will also copy the necessary database files for `pacman -Sy`.
-
-In the below example, make sure that `pacman-usbstick` is writable (and replace
-accordingly).
 
 ```bash
 # Machine with internet connection
@@ -50,13 +50,15 @@ pacman-backup upgrade /run/media/$USER/pacman-usbstick;'
 
 ## Share Updates via LAN Connection
 
+In the below example, the machine with internet connection has the IP `192.168.0.10`.
+Replace the IP with the correct one that matches your setup. If in doubt, use `ip` or `ifconfig`.
+
+
 **Step 1**:
 
 On the machine with internet connection, connect the LAN cable (and internet connection).
 
 Use `pacman-backup serve` to start a pacman server that can be used by other pacman clients.
-
-In the below example, the machine with internet connection has the IP `192.168.0.10`.
 
 ```bash
 # Machine with internet connection
@@ -69,8 +71,8 @@ pacman-backup serve;
 
 **Step 2**:
 
-On the machine without internet connection, connect the LAN cable (so that the
-server running at `192.168.0.10` is reachable).
+On the machine without internet connection, connect the LAN cable and verify that the server
+(the machine with internet connection) is reachable via its IP. If in doubt, use `ping`.
 
 Use `pacman-backup download 192.168.0.10` to download the packages to pacman's package cache.
 
@@ -93,13 +95,15 @@ can be used for `pacman` directly.
 Note that if the packages don't exist, they will appear in the logs but aren't downloaded
 directly; and that partial upgrades are not officially supported by Arch Linux.
 
+In the below example, the machine with internet connection has the IP `192.168.0.10`.
+Replace the IP with the correct one that matches your setup. If in doubt, use `ip` or `ifconfig`.
+
 **Step 1**:
 
 On the machine with internet connection, connect the LAN cable (and internet connection).
 
 Use `pacman-backup serve` to start a pacman server that can be used by other pacman clients.
 
-In the below example, the machine with internet connection has the IP `192.168.0.10`.
 
 ```bash
 # Machine with internet connection
