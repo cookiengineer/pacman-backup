@@ -8,8 +8,10 @@ const os      = require('os');
 const spawn   = require('child_process').spawnSync;
 
 const ARCH   = ((arch) => {
-	if (arch === 'x64') return 'x86_64';
-	if (arch === 'arm') return 'armv7h';
+	if (arch === 'arm')   return 'armv7h';
+	if (arch === 'arm64') return 'aarch64';
+	if (arch === 'x32')   return 'i686';
+	if (arch === 'x64')   return 'x86_64';
 	return 'any';
 })(process.arch);
 const ARGS   = Array.from(process.argv).slice(2);
@@ -589,8 +591,8 @@ if (ACTION === 'archive' && FOLDER !== null) {
 			'any':     {},
 			'armv7h':  {},
 			'aarch64': {},
+			'i686':    {},
 			'x86_64':  {},
-			'x86':     {}
 		};
 
 		cache.forEach((file) => {
