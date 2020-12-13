@@ -586,10 +586,11 @@ if (ACTION === 'archive' && FOLDER !== null) {
 	read_packages(pkgs_folder, (cache) => {
 
 		let database = {
-			'any':    {},
-			'armv7h': {},
-			'x86_64': {},
-			'x86':    {}
+			'any':     {},
+			'armv7h':  {},
+			'aarch64': {},
+			'x86_64':  {},
+			'x86':     {}
 		};
 
 		cache.forEach((file) => {
