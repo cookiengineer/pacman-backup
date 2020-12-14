@@ -150,6 +150,7 @@ parameters are detected in different ways; and that is documented here:
 - `FOLDER` has to start with `/`. Defaulted with `null` (and uses `/var/cache/pacman/pkg` and `/var/lib/pacman/sync`).
 - `MIRROR` has to start with `https://` and contain the full `mirrorlist` syntaxed URL. Supported variables are `$arch` and `$repo`. Defaulted with `https://arch.eckner.net/os/$arch`.
 - `SERVER` has to be an `IPv4` separated by `.` or an `IPv6` separated by `:`. Defaulted with `null`.
+- `SERVER` can optionally be a `hostname`. If it is a `hostname`, make sure it's setup in the `/etc/hosts` file.
 
 Full example (which won't make sense but is parsed correctly):
 

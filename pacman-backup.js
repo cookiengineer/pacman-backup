@@ -17,7 +17,7 @@ const ARCH   = ((arch) => {
 const ARGS   = Array.from(process.argv).slice(2);
 const ACTION = /^(archive|cleanup|download|serve|upgrade)$/g.test((ARGS[0] || '')) ? ARGS[0] : null;
 const FOLDER = ARGS.find((v) => v.startsWith('/')) || null;
-const MIRROR = ARGS.find((v) => v.startsWith('https://') && v !== ACTION && v !== FOLDER) || 'https://arch.eckner.net/os/$arch';
+const MIRROR = ARGS.find((v) => v.startsWith('https://')) || 'https://arch.eckner.net/os/$arch';
 const SERVER = ARGS.find((v) => (v.includes(':') || v.includes('.'))) || ARGS.find((v) => v !== ACTION && v !== FOLDER && v !== MIRROR) || null;
 const USER   = process.env.SUDO_USER || process.env.USER || process.env.USERNAME;
 
