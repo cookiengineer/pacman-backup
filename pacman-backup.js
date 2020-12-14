@@ -17,18 +17,22 @@ const ARCH   = ((arch) => {
 const ARGS   = Array.from(process.argv).slice(2);
 const ACTION = /^(archive|cleanup|download|serve|upgrade)$/g.test((ARGS[0] || '')) ? ARGS[0] : null;
 const FOLDER = ARGS.find((v) => v.startsWith('/')) || null;
-const MIRROR = 'https://arch.eckner.net/archlinux/$repo/os/$arch';
-const SERVER = ARGS.find((v) => (v.includes(':') || v.includes('.'))) || ARGS.find((v) => v !== ACTION && v !== FOLDER) || null;
+const MIRROR = ARGS.find((v) => v.startsWith('https://') && v !== ACTION && v !== FOLDER) || 'https://arch.eckner.net/os/$arch';
+const SERVER = ARGS.find((v) => (v.includes(':') || v.includes('.'))) || ARGS.find((v) => v !== ACTION && v !== FOLDER && v !== MIRROR) || null;
 const USER   = process.env.SUDO_USER || process.env.USER || process.env.USERNAME;
 
 
 
-console.log(':: pacman-backup ' + ACTION);
-console.log('   -> FOLDER: ' + FOLDER);
-console.log('   -> MIRROR: ' + MIRROR);
-console.log('   -> SERVER: ' + SERVER);
-console.log('   -> USER:   ' + USER);
-console.log('');
+if (ACTION !== null) {
+
+	console.log(':: pacman-backup ' + ACTION);
+	console.log('   -> FOLDER: ' + FOLDER !== null ? ('"' + FOLDER + '"') : '(none)');
+	console.log('   -> MIRROR: ' + MIRROR !== null ? ('"' + MIRROR + '"') : '(none)');
+	console.log('   -> SERVER: ' + SERVER !== null ? ('"' + SERVER + '"') : '(none)');
+	console.log('   -> USER:   ' + USER   !== null ? ('"' + USER   + '"') : '(none)');
+	console.log('');
+
+}
 
 
 
@@ -781,10 +785,17 @@ if (ACTION === 'archive' && FOLDER !== null) {
 					console.log('');
 
 					downloads.forEach((pkg) => {
+
 						let url = MIRROR;
+						if (url.endsWith('/')) {
+							url = url.substr(0, url.length - 1);
+						}
+
 						url = url.replace('$arch', ARCH);
 						url = url.replace('$repo', pkg.repo);
+
 						console.log(url + '/' + pkg.file);
+
 					});
 
 				}

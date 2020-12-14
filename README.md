@@ -140,6 +140,31 @@ sudo pacman -Su; # or use -Suw
 
 ## Advanced Usage
 
+### Available CLI parameters
+
+The `pacman-backup` script tries to identify parameters dynamically, which means that
+they do not have to be written in a specific order. However, to avoid confusion, the
+parameters are detected in different ways; and that is documented here:
+
+- `ACTION` can be either of `archive`, `cleanup`, `download`, `serve`, or `upgrade`. Defaulted with `null` (and shows help).
+- `FOLDER` has to start with `/`. Defaulted with `null` (and uses `/var/cache/pacman/pkg` and `/var/lib/pacman/sync`).
+- `MIRROR` has to start with `https://` and contain the full `mirrorlist` syntaxed URL. Supported variables are `$arch` and `$repo`. Defaulted with `https://arch.eckner.net/os/$arch`.
+- `SERVER` has to be an `IPv4` separated by `.` or an `IPv6` separated by `:`. Defaulted with `null`.
+
+Full example (which won't make sense but is parsed correctly):
+
+```bash
+# IMPORTANT: MIRROR string needs to be escaped, otherwise bash will try to replace it.
+
+pacman-backup download /run/media/cookiengineer/my-usb-drive "https://my.own.mirror/archlinux/\$repo/os/\$arch" 192.168.0.123;
+
+# :: pacmab-backup download
+#    -> FOLDER: "/run/media/cookiengineer/my-usb-drive"
+#    -> MIRROR: "https://my.own/mirror/archlinux/$repo/os/$arch"
+#    -> SERVER: "192.168.0.123"
+#    -> USER:   "cookiengineer"
+```
+
 ### archive
 
 `archive` allows to backup everything to a specified folder. It copies the files from
@@ -176,11 +201,11 @@ pacman-backup cleanup /target/folder;
 
 `download` allows to download packages from a `pacman-backup serve` based server.
 
-If no folder is specified, it will download to `/var/cache/pacman/pkg`.
-If a folder is specified, it will download to `$FOLDER/pkgs`.
+If no folder and a server is specified, it will run `pacman -Sy` in advance and download to `/var/cache/pacman/pkg`.
+If a folder and a server is specified, it will run `pacman -Sy` in advance and download to `$FOLDER/pkgs`.
 
-If no server is specified, it generates a download list of package URLs that
-you can use for your download manager of choice (e.g. uGet or jdownloader).
+If no folder and no server is specified, it will generate a URL list of packages
+that can be copy/pasted into a download manager of choice (e.g. uGet or jdownloader).
 
 ```bash
 # download packages to /var/cache/pacman/pkg
