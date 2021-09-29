@@ -26,10 +26,10 @@ const USER   = process.env.SUDO_USER || process.env.USER || process.env.USERNAME
 if (ACTION !== null) {
 
 	console.log(':: pacman-backup ' + ACTION);
-	console.log('   -> FOLDER: ' + FOLDER !== null ? ('"' + FOLDER + '"') : '(none)');
-	console.log('   -> MIRROR: ' + MIRROR !== null ? ('"' + MIRROR + '"') : '(none)');
-	console.log('   -> SERVER: ' + SERVER !== null ? ('"' + SERVER + '"') : '(none)');
-	console.log('   -> USER:   ' + USER   !== null ? ('"' + USER   + '"') : '(none)');
+	console.log('   -> FOLDER: ' + (FOLDER !== null ? ('"' + FOLDER + '"') : '(none)'));
+	console.log('   -> MIRROR: ' + (MIRROR !== null ? ('"' + MIRROR + '"') : '(none)'));
+	console.log('   -> SERVER: ' + (SERVER !== null ? ('"' + SERVER + '"') : '(none)'));
+	console.log('   -> USER:   ' + (USER   !== null ? ('"' + USER   + '"') : '(none)'));
 	console.log('');
 
 }
