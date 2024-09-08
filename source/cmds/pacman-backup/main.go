@@ -222,6 +222,9 @@ func main() {
 			// pacman-backup upgrade /mnt/usb-drive
 			if isFolder(os.Args[2]) {
 
+				config := pacman.InitConfig()
+				mirror := config.ToMirror()
+
 				if !isFolder(os.Args[2] + "/sync") {
 					makeFolder(os.Args[2] + "/sync")
 				}
@@ -230,7 +233,7 @@ func main() {
 					makeFolder(os.Args[2] + "/pkgs")
 				}
 
-				actions.Upgrade(os.Args[2] + "/sync", os.Args[2] + "/pkgs")
+				actions.Upgrade(mirror, os.Args[2] + "/sync", os.Args[2] + "/pkgs")
 
 			}
 
@@ -276,9 +279,10 @@ func main() {
 		} else if action == "upgrade" {
 
 			config := pacman.InitConfig()
+			mirror := config.ToMirror()
 
 			if isFolder(config.Options.CacheDir) {
-				actions.Upgrade(config.Options.DBPath + "/sync", config.Options.CacheDir)
+				actions.Upgrade(mirror, config.Options.DBPath + "/sync", config.Options.CacheDir)
 			}
 
 		} else {

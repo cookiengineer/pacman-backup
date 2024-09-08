@@ -1,5 +1,6 @@
 package pacman
 
+import "pacman-backup/console"
 import "os/exec"
 
 func Sync(config string) bool {
@@ -11,6 +12,8 @@ func Sync(config string) bool {
 
 	if err == nil {
 		result = true
+	} else {
+		console.Error(err.Error())
 	}
 
 	return result

@@ -1,5 +1,6 @@
 package pacman
 
+import "pacman-backup/console"
 import "pacman-backup/structs"
 import "os"
 import "os/exec"
@@ -16,6 +17,8 @@ func CollectUpdate(config string, name string) structs.Package {
 
 	if err == nil {
 		ParsePackage(string(buffer), &result)
+	} else {
+		console.Error(err.Error())
 	}
 
 	return result
