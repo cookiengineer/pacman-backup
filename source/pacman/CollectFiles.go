@@ -3,7 +3,7 @@ package pacman
 import "pacman-backup/structs"
 import "os"
 
-func ReadPackages(folder string) []structs.Package {
+func CollectFiles(config string, folder string) []structs.Package {
 
 	var result []structs.Package
 
@@ -21,7 +21,7 @@ func ReadPackages(folder string) []structs.Package {
 
 				if IsPackageFilename(file) {
 
-					pkg := ReadPackage(folder + "/" + file)
+					pkg := CollectFile(config, folder + "/" + file)
 
 					if pkg.Name != "" {
 						result = append(result, pkg)
