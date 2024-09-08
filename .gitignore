@@ -3,3 +3,4 @@
 /pacman-backup/
 /*.pkg.tar.zst
 
+/build
