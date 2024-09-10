@@ -1,7 +1,7 @@
 # Maintainer: Cookie Engineer <@cookiengineer>
 
 pkgname=pacman-backup
-pkgver=r16.7a7623c
+pkgver=r20.d746588
 pkgrel=1
 pkgdesc='Pacman Backup tool for off-the-grid updates via portable USB sticks or (mesh) LAN networks.'
 arch=('i686' 'x86_64' 'armv6h' 'armv7h' 'aarch64')
@@ -20,11 +20,11 @@ pkgver() {
 }
 
 build() {
-	cd "${srcdir}/${_gitname}";
-	bash build.sh;
+	cd "${srcdir}/${_gitname}/source";
+	env CGO_ENABLED=0 GOOS="linux" go build -o "${srcdir}/pacman-backup.bin" "${srcdir}/${_gitname}/source/cmds/pacman-backup/main.go";
 }
 package() {
 	cd "${srcdir}/${_gitname}";
-	install -Dm755 "build/pacman-backup_linux_amd64" "$pkgdir/usr/bin/pacman-backup";
+	install -Dm755 "${srcdir}/pacman-backup.bin" "${pkgdir}/usr/bin/pacman-backup";
 }
 
