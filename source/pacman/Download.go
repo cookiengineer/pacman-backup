@@ -7,7 +7,8 @@ func Download(config string, name string) bool {
 
 	var result bool
 
-	cmd := exec.Command("pacman", "-Sw", "--noconfirm", "--config", config, name)
+	// Download without dependency checks for better UI
+	cmd := exec.Command("pacman", "-Swdd", "--noconfirm", "--config", config, name)
 	err := cmd.Run()
 
 	if err == nil {

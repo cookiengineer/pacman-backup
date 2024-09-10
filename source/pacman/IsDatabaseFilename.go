@@ -16,6 +16,8 @@ func IsDatabaseFilename(filepath string) bool {
 
 	if strings.HasSuffix(filename, ".db") {
 		result = true
+	} else if strings.HasSuffix(filename, ".db.sig") {
+		result = true
 	} else if strings.HasSuffix(filename, ".files") {
 		result = true
 	}

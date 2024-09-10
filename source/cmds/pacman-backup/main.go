@@ -181,6 +181,23 @@ func main() {
 				actions.Sync(mirror, config.Options.DBPath + "/sync", config.Options.CacheDir)
 				actions.Download(mirror, config.Options.DBPath + "/sync", config.Options.CacheDir)
 
+			// pacman-backup download /mnt/usb-drive
+			} else if isFolder(os.Args[2]) {
+
+				config := pacman.InitConfig()
+				mirror := config.ToMirror()
+
+				if !isFolder(os.Args[2] + "/sync") {
+					makeFolder(os.Args[2] + "/sync")
+				}
+
+				if !isFolder(os.Args[2] + "/pkgs") {
+					makeFolder(os.Args[2] + "/pkgs")
+				}
+
+				actions.Sync(mirror, os.Args[2] + "/sync", os.Args[2] + "/pkgs")
+				actions.Download(mirror, os.Args[2] + "/sync", os.Args[2] + "/pkgs")
+
 			}
 
 		} else if action == "import" {
