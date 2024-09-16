@@ -300,11 +300,11 @@ func main() {
 
 			if isFolder(config.Options.DBPath + "/sync") && isFolder(config.Options.CacheDir) {
 
-				// if isRootUser() {
+				if isRootUser() {
 					actions.Cleanup(config.Options.DBPath + "/sync", config.Options.CacheDir)
-				//} else {
-				//	console.Error("Please execute this command as the root user")
-				//}
+				} else {
+					console.Error("Please execute this command as the root user")
+				}
 
 			}
 
