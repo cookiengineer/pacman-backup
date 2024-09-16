@@ -14,10 +14,10 @@ build() {
 
 	if [[ "${go_os}" == "windows" ]]; then
 		cd "${ROOT}/source";
-		env CGO_ENABLED=0 GOOS="${go_os}" GOARCH="${go_arch}" ${GO} build -o "${ROOT}/build/pacman-backup-${go_os}_${go_arch}.exe" "${ROOT}/source/cmds/pacman-backup/main.go";
+		env CGO_ENABLED=0 GOOS="${go_os}" GOARCH="${go_arch}" ${GO} build -ldflags "-s -w" -o "${ROOT}/build/pacman-backup-${go_os}_${go_arch}.exe" "${ROOT}/source/cmds/pacman-backup/main.go";
 	else
 		cd "${ROOT}/source";
-		env CGO_ENABLED=0 GOOS="${go_os}" GOARCH="${go_arch}" ${GO} build -o "${ROOT}/build/pacman-backup-${go_os}_${go_arch}" "${ROOT}/source/cmds/pacman-backup/main.go";
+		env CGO_ENABLED=0 GOOS="${go_os}" GOARCH="${go_arch}" ${GO} build -ldflags "-s -w" -o "${ROOT}/build/pacman-backup-${go_os}_${go_arch}" "${ROOT}/source/cmds/pacman-backup/main.go";
 	fi;
 
 	if [[ $? == 0 ]]; then
