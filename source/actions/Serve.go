@@ -1,5 +1,6 @@
 package actions
 
+import "pacman-backup/console"
 import "pacman-backup/pacman"
 import "net/http"
 import "os"
@@ -22,6 +23,8 @@ func serveFileRange(response http.ResponseWriter, file string, start int64, end 
 			content_range := "bytes " + strconv.FormatInt(start, 10) + "-" + strconv.FormatInt(end, 10) + "/" + strconv.FormatInt(stat.Size(), 10)
 			partial_buffer := buffer[start:end+1]
 
+			console.Log("Serve " + filepath.Base(file) + " " + content_range)
+
 			header := response.Header()
 			header.Set("Content-Encoding", "identity")
 			header.Set("Content-Length", strconv.Itoa(len(partial_buffer)))
@@ -34,13 +37,21 @@ func serveFileRange(response http.ResponseWriter, file string, start int64, end 
 			response.Write(partial_buffer)
 
 		} else {
+
+			console.Warn("Serve " + filepath.Base(file) + " failed")
+
 			response.WriteHeader(http.StatusNotFound)
 			response.Write([]byte{})
+
 		}
 
 	} else {
+
+		console.Warn("Serve " + filepath.Base(file) + " failed")
+
 		response.WriteHeader(http.StatusNotFound)
 		response.Write([]byte{})
+
 	}
 
 }
@@ -57,6 +68,8 @@ func serveFile(response http.ResponseWriter, file string) {
 
 		if err1 == nil {
 
+			console.Log("Serve " + filepath.Base(file))
+
 			header := response.Header()
 			header.Set("Accept-Ranges", "bytes")
 			header.Set("Content-Encoding", "identity")
@@ -69,13 +82,21 @@ func serveFile(response http.ResponseWriter, file string) {
 			response.Write(buffer)
 
 		} else {
+
+			console.Warn("Serve " + filepath.Base(file) + " failed")
+
 			response.WriteHeader(http.StatusNotFound)
 			response.Write([]byte{})
+
 		}
 
 	} else {
+
+		console.Warn("Serve " + filepath.Base(file) + " failed")
+
 		response.WriteHeader(http.StatusNotFound)
 		response.Write([]byte{})
+
 	}
 
 }
@@ -107,6 +128,8 @@ func serveFileHeader(response http.ResponseWriter, file string) {
 }
 
 func Serve(sync_folder string, pkgs_folder string) bool {
+
+	console.Group("Serve")
 
 	var result bool
 
@@ -258,6 +281,8 @@ func Serve(sync_folder string, pkgs_folder string) bool {
 	if err == nil {
 		result = true
 	}
+
+	console.GroupEndResult(result, "Serve")
 
 	return result
 

@@ -1,22 +1,26 @@
 package pacman
 
-import "pacman-backup/console"
 import "pacman-backup/structs"
+import "os"
 import "os/exec"
 
-func CollectFile(config string, filepath string) structs.Package {
+func CollectFile(config string, filepath string) (structs.Package, error) {
 
 	var result structs.Package
+	var err error = nil
 
-	cmd := exec.Command("pacman", "-Qpi", "--noconfirm", "--config", config, filepath)
-	buffer, err := cmd.Output()
+	os.Setenv("TZ", "Europe/Greenwich")
+	os.Setenv("LC_TIME", "en_US")
 
-	if err == nil {
+	cmd1 := exec.Command("pacman", "-Qpi", "--noconfirm", "--config", config, filepath)
+	buffer, err1 := cmd1.Output()
+
+	if err1 == nil {
 		ParsePackage(string(buffer), &result)
 	} else {
-		console.Error(err.Error())
+		err = err1
 	}
 
-	return result
+	return result, err
 
 }

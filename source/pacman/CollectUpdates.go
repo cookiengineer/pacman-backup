@@ -2,6 +2,7 @@ package pacman
 
 import "pacman-backup/console"
 import "pacman-backup/structs"
+import "bytes"
 import "os"
 import "os/exec"
 import "strings"
@@ -9,16 +10,22 @@ import "strings"
 func CollectUpdates(config string) []structs.Package {
 
 	update_index := make(map[string]bool, 0)
+	result := make([]structs.Package, 0)
 
 	os.Setenv("TZ", "Europe/Greenwich")
 	os.Setenv("LC_TIME", "en_US")
 
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
 	cmd1 := exec.Command("pacman", "-Qu", "--noconfirm", "--config", config)
-	buffer1, err1 := cmd1.Output()
+	cmd1.Stdout = &stdout
+	cmd1.Stderr = &stderr
+	err1 := cmd1.Run()
 
 	if err1 == nil {
 
-		lines := strings.Split(strings.TrimSpace(string(buffer1)), "\n")
+		lines := strings.Split(strings.TrimSpace(stdout.String()), "\n")
 
 		for l := 0; l < len(lines); l++ {
 
@@ -39,44 +46,42 @@ func CollectUpdates(config string) []structs.Package {
 
 		}
 
-	} else {
-		console.Error(err1.Error())
-	}
+		cmd2 := exec.Command("pacman", "-Si", "--noconfirm", "--config", config)
+		buffer, err2 := cmd2.Output()
 
-	cmd := exec.Command("pacman", "-Si", "--noconfirm", "--config", config)
-	buffer, err2 := cmd.Output()
+		if err2 == nil {
 
-	result := make([]structs.Package, 0)
+			blocks := strings.Split("\n\n"+strings.TrimSpace(string(buffer)), "\n\nRepository")
 
-	if err2 == nil {
+			for b := 0; b < len(blocks); b++ {
 
-		blocks := strings.Split("\n\n"+strings.TrimSpace(string(buffer)), "\n\nRepository")
+				block := strings.TrimSpace(blocks[b])
 
-		for b := 0; b < len(blocks); b++ {
+				if block != "" {
 
-			block := strings.TrimSpace(blocks[b])
+					update := structs.NewPackage("pacman")
+					ParsePackage("Repository "+block, &update)
 
-			if block != "" {
+					if update.Name != "" && update.Version.IsValid() {
 
-				update := structs.NewPackage("pacman")
-				ParsePackage("Repository "+block, &update)
+						_, ok := update_index[update.Name]
 
-				if update.Name != "" && update.Version.IsValid() {
+						if ok == true {
+							result = append(result, update)
+						}
 
-					_, ok := update_index[update.Name]
-
-					if ok == true {
-						result = append(result, update)
 					}
 
 				}
 
 			}
 
+		} else {
+			console.Error(err2.Error())
 		}
 
 	} else {
-		console.Error(err2.Error())
+		console.Error(stderr.String())
 	}
 
 	return result

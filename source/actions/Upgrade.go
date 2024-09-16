@@ -93,55 +93,71 @@ func Upgrade(mirror_url string, sync_folder string, pkgs_folder string) bool {
 
 	if err1 == nil {
 
-		files := pacman.CollectFiles("/tmp/pacman-backup.conf", pkgs_folder)
+		packages := pacman.CollectFiles("/tmp/pacman-backup.conf", pkgs_folder)
 		updates := pacman.CollectUpdates("/tmp/pacman-backup.conf")
 
-		console.Log("Found " + strconv.Itoa(len(updates)) + " available updates")
-		console.Log("Found " + strconv.Itoa(len(files)) + " cached updates")
+		console.Log("Found " + strconv.Itoa(len(updates)) + " Updates")
+		console.Log("Found " + strconv.Itoa(len(packages)) + " Packages")
 
-		cache := make(map[string]bool, 0)
+		cached := make(map[string]bool)
 		verified := true
 
-		if len(files) > 0 && len(updates) > 0 {
+		if len(updates) > 0 {
 
 			for u := 0; u < len(updates); u++ {
-				cache[updates[u].Name + "@" + updates[u].Version.String()] = false
+				cached[updates[u].Name + "@" + updates[u].Version.String()] = false
 			}
 
-			for f := 0; f < len(files); f++ {
+		}
 
-				file := files[f]
+		if len(packages) > 0 {
 
-				value, ok := cache[file.Name + "@" + file.Version.String()]
+			for _, pkg := range packages {
+
+				value, ok := cached[pkg.Name + "@" + pkg.Version.String()]
 
 				if ok == true && value == false {
-					cache[file.Name + "@" + file.Version.String()] = true
+					cached[pkg.Name + "@" + pkg.Version.String()] = true
 				}
 
 			}
 
-			for name, is_cached := range cache {
+		}
 
-				if is_cached == false && !isIgnored(&config, name) {
-					console.Error("-> Package " + name + " not available")
-					verified = false
-				}
+		for name, is_cached := range cached {
 
+			if is_cached == false && !isIgnored(&config, name) {
+				console.Error("Package " + name + " not available")
+				verified = false
 			}
 
 		}
 
 		if verified == true {
-			result = pacman.Upgrade("/tmp/pacman-backup.conf")
+
+			console.Log("Local Packages verified")
+
+			err2 := pacman.Upgrade("/tmp/pacman-backup.conf")
+
+			if err2 == nil {
+				result = true
+			} else {
+				console.Error(err2.Error())
+				result = false
+			}
+
 		} else {
+
+			console.Error("Local Packages unverified")
 			console.Error("")
 			console.Error("Execute \"sudo pacman-backup download\" to repair local cache")
 			console.Error("")
+
 		}
 
 	}
 
-	console.GroupEnd("Upgrade")
+	console.GroupEndResult(result, "Upgrade")
 
 	return result
 

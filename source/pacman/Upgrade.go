@@ -1,21 +1,24 @@
 package pacman
 
-import "pacman-backup/console"
+import "os"
 import "os/exec"
 
-func Upgrade(config string) bool {
+func Upgrade(config string) (error) {
 
-	var result bool
+	var err error = nil
 
-	cmd := exec.Command("pacman", "-Su", "--noconfirm", "--config", config)
-	err := cmd.Run()
+	os.Setenv("TZ", "Europe/Greenwich")
+	os.Setenv("LC_TIME", "en_US")
 
-	if err == nil {
-		result = true
+	cmd1 := exec.Command("pacman", "-Su", "--noconfirm", "--config", config)
+	err1 := cmd1.Run()
+
+	if err1 == nil {
+		err = nil
 	} else {
-		console.Error(err.Error())
+		err = err1
 	}
 
-	return result
+	return err
 
 }

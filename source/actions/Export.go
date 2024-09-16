@@ -21,23 +21,25 @@ func Export(sync_folder string, pkgs_folder string) bool {
 
 			for e := 0; e < len(entries); e++ {
 
-				file := entries[e].Name()
+				filename := entries[e].Name()
 
-				if pacman.IsDatabaseFilename(file) {
+				if pacman.IsDatabaseFilename(filename) {
 
-					buffer, err13 := os.ReadFile(config.Options.DBPath + "/sync/" + file)
+					console.Progress("File sync/" + filename)
+
+					buffer, err13 := os.ReadFile(config.Options.DBPath + "/sync/" + filename)
 
 					if err13 == nil {
 
-						err14 := os.WriteFile(sync_folder + "/" + file, buffer, 0666)
+						err14 := os.WriteFile(sync_folder + "/" + filename, buffer, 0666)
 
 						if err14 != nil {
-							console.Error("> File \"sync/" + file + "\" not copied")
+							console.Error("File sync/" + filename + " failed to copy")
 							result_sync = false
 						}
 
 					} else {
-						console.Error("> File \"sync/" + file + "\" not copied")
+						console.Error("File sync/" + filename + " failed to copy")
 						result_sync = false
 					}
 
@@ -60,23 +62,25 @@ func Export(sync_folder string, pkgs_folder string) bool {
 
 			for e := 0; e < len(entries); e++ {
 
-				file := entries[e].Name()
+				filename := entries[e].Name()
 
-				if pacman.IsPackageFilename(file) {
+				if pacman.IsPackageFilename(filename) {
 
-					buffer, err23 := os.ReadFile(config.Options.CacheDir + "/" + file)
+					console.Progress("File pkgs/" + filename)
+
+					buffer, err23 := os.ReadFile(config.Options.CacheDir + "/" + filename)
 
 					if err23 == nil {
 
-						err24 := os.WriteFile(pkgs_folder + "/" + file, buffer, 0666)
+						err24 := os.WriteFile(pkgs_folder + "/" + filename, buffer, 0666)
 
 						if err24 != nil {
-							console.Error("> File \"pkgs/" + file + "\" not copied")
+							console.Error("File pkgs/" + filename + " failed to copy")
 							result_pkgs = false
 						}
 
 					} else {
-						console.Error("> File \"pkgs/" + file + "\" not copied")
+						console.Error("File pkgs/" + filename + " failed to copy")
 						result_pkgs = false
 					}
 
@@ -88,7 +92,7 @@ func Export(sync_folder string, pkgs_folder string) bool {
 
 	}
 
-	console.GroupEnd("Export")
+	console.GroupEndResult(result_sync && result_pkgs, "Export")
 
 	return result_sync && result_pkgs
 

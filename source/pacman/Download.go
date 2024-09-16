@@ -1,22 +1,38 @@
 package pacman
 
-import "pacman-backup/console"
+import "bytes"
+import "errors"
 import "os/exec"
+import "strings"
 
-func Download(config string, name string) bool {
+func Download(config string, name string) (error) {
 
-	var result bool
+	var err error = nil
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
 
 	// Download without dependency checks for better UI
-	cmd := exec.Command("pacman", "-Swdd", "--noconfirm", "--config", config, name)
-	err := cmd.Run()
+	cmd1 := exec.Command("pacman", "-Swdd", "--noconfirm", "--config", config, name)
+	cmd1.Stdout = &stdout
+	cmd1.Stderr = &stderr
 
-	if err == nil {
-		result = true
+	err1 := cmd1.Run()
+
+	if err1 == nil {
+
+		err = nil
+
 	} else {
-		console.Error(err.Error())
+
+		lines := strings.Split(strings.TrimSpace(stderr.String()), "\n")
+
+		if len(lines) > 0 {
+			err = errors.New(lines[len(lines)-1])
+		}
+
 	}
 
-	return result
+	return err
 
 }

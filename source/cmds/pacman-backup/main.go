@@ -46,6 +46,18 @@ func isMirror(value string) bool {
 
 }
 
+func isRootUser() bool {
+
+	user := os.Getenv("USER")
+
+	if user == "root" {
+		return true
+	}
+
+	return false
+
+}
+
 func showUsage() {
 
 	user := os.Getenv("USER")
@@ -80,25 +92,25 @@ func showUsage() {
 
 	console.Group("USB Drive Example")
 	console.Log("# Step 1: Machine with internet connection")
-	console.Log("> sudo pacman-backup download;")
-	console.Log("> pacman-backup export /run/media/" + user + "/pacman-usbdrive;")
-	console.Log("> pacman-backup cleanup /run/media/" + user + "/pacman-usbdrive;")
-	console.Log("> sync;")
+	console.Log("sudo pacman-backup download;")
+	console.Log("pacman-backup export /run/media/" + user + "/pacman-usbdrive;")
+	console.Log("pacman-backup cleanup /run/media/" + user + "/pacman-usbdrive;")
+	console.Log("sync;")
 	console.Log("")
 	console.Log("# Step 2: Machine without internet connection")
-	console.Log("> sudo pacman-backup import /run/media/" + user + "/pacman-usbdrive;")
-	console.Log("> sudo pacman-backup upgrade /run/media/" + user + "/pacman-usbdrive;")
-	console.Log("> sync;")
+	console.Log("sudo pacman-backup import /run/media/" + user + "/pacman-usbdrive;")
+	console.Log("sudo pacman-backup upgrade /run/media/" + user + "/pacman-usbdrive;")
+	console.Log("sync;")
 	console.GroupEnd("-----------------")
 
 	console.Group("LAN Mirror Example")
 	console.Log("# Step 1: Machine with internet connection")
-	console.Log("> sudo pacman-backup download;")
-	console.Log("> sudo pacman-backup serve;")
+	console.Log("sudo pacman-backup download;")
+	console.Log("sudo pacman-backup serve;")
 	console.Log("")
 	console.Log("# Step 2: Machine without internet connection")
-	console.Log("> sudo pacman-backup download http://192.168.0.10:15678")
-	console.Log("> sudo pacman-backup upgrade;")
+	console.Log("sudo pacman-backup download http://192.168.0.10:15678")
+	console.Log("sudo pacman-backup upgrade;")
 	console.Group("------------------")
 
 }
@@ -162,11 +174,15 @@ func main() {
 			// pacman-backup cleanup /mnt/usb-drive
 			if isFolder(os.Args[2]) {
 
+				if !isFolder(os.Args[2] + "/sync") {
+					makeFolder(os.Args[2] + "/sync")
+				}
+
 				if !isFolder(os.Args[2] + "/pkgs") {
 					makeFolder(os.Args[2] + "/pkgs")
 				}
 
-				actions.Cleanup(os.Args[2] + "/pkgs")
+				actions.Cleanup(os.Args[2] + "/sync", os.Args[2] + "/pkgs")
 
 			}
 
@@ -178,8 +194,12 @@ func main() {
 				config := pacman.InitConfig()
 				mirror := os.Args[2]
 
-				actions.Sync(mirror, config.Options.DBPath + "/sync", config.Options.CacheDir)
-				actions.Download(mirror, config.Options.DBPath + "/sync", config.Options.CacheDir)
+				if isRootUser() {
+					actions.Sync(mirror, config.Options.DBPath + "/sync", config.Options.CacheDir)
+					actions.Download(mirror, config.Options.DBPath + "/sync", config.Options.CacheDir)
+				} else {
+					console.Error("Please execute this command as the root user")
+				}
 
 			// pacman-backup download /mnt/usb-drive
 			} else if isFolder(os.Args[2]) {
@@ -213,7 +233,11 @@ func main() {
 					makeFolder(os.Args[2] + "/pkgs")
 				}
 
-				actions.Import(os.Args[2] + "/sync", os.Args[2] + "/pkgs")
+				if isRootUser() {
+					actions.Import(os.Args[2] + "/sync", os.Args[2] + "/pkgs")
+				} else {
+					console.Error("Please execute this command as the root user")
+				}
 
 			}
 
@@ -250,7 +274,11 @@ func main() {
 					makeFolder(os.Args[2] + "/pkgs")
 				}
 
-				actions.Upgrade(mirror, os.Args[2] + "/sync", os.Args[2] + "/pkgs")
+				if isRootUser() {
+					actions.Upgrade(mirror, os.Args[2] + "/sync", os.Args[2] + "/pkgs")
+				} else {
+					console.Error("Please execute this command as the root user")
+				}
 
 			}
 
@@ -270,8 +298,14 @@ func main() {
 			// pacman-backup cleanup
 			config := pacman.InitConfig()
 
-			if isFolder(config.Options.CacheDir) {
-				actions.Cleanup(config.Options.CacheDir)
+			if isFolder(config.Options.DBPath + "/sync") && isFolder(config.Options.CacheDir) {
+
+				// if isRootUser() {
+					actions.Cleanup(config.Options.DBPath + "/sync", config.Options.CacheDir)
+				//} else {
+				//	console.Error("Please execute this command as the root user")
+				//}
+
 			}
 
 		} else if action == "download" {
@@ -281,8 +315,14 @@ func main() {
 			mirror := config.ToMirror()
 
 			if isFolder(config.Options.CacheDir) {
-				actions.Sync(mirror, config.Options.DBPath + "/sync", config.Options.CacheDir)
-				actions.Download(mirror, config.Options.DBPath + "/sync", config.Options.CacheDir)
+
+				if isRootUser() {
+					actions.Sync(mirror, config.Options.DBPath + "/sync", config.Options.CacheDir)
+					actions.Download(mirror, config.Options.DBPath + "/sync", config.Options.CacheDir)
+				} else {
+					console.Error("Please execute this command as the root user")
+				}
+
 			}
 
 		} else if action == "serve" {
@@ -299,7 +339,13 @@ func main() {
 			mirror := config.ToMirror()
 
 			if isFolder(config.Options.CacheDir) {
-				actions.Upgrade(mirror, config.Options.DBPath + "/sync", config.Options.CacheDir)
+
+				if isRootUser() {
+					actions.Upgrade(mirror, config.Options.DBPath + "/sync", config.Options.CacheDir)
+				} else {
+					console.Error("Please execute this command as the root user")
+				}
+
 			}
 
 		} else {

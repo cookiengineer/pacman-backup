@@ -3,9 +3,9 @@ package pacman
 import "pacman-backup/structs"
 import "os"
 
-func CollectFiles(config string, folder string) []structs.Package {
+func CollectFiles(config string, folder string) map[string]structs.Package {
 
-	var result []structs.Package
+	result := make(map[string]structs.Package)
 
 	stat, err1 := os.Stat(folder)
 
@@ -21,10 +21,10 @@ func CollectFiles(config string, folder string) []structs.Package {
 
 				if IsPackageFilename(file) {
 
-					pkg := CollectFile(config, folder + "/" + file)
+					pkg, err3 := CollectFile(config, folder + "/" + file)
 
-					if pkg.Name != "" {
-						result = append(result, pkg)
+					if pkg.Name != "" && err3 == nil {
+						result[file] = pkg
 					}
 
 				}
