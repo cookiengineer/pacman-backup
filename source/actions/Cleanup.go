@@ -23,11 +23,25 @@ func Cleanup(sync_folder string, pkgs_folder string) bool {
 
 			console.Log("Found " + strconv.Itoa(len(packages)) + " Packages")
 
+			keep_packages := make(map[string]bool)
+			system_config := pacman.InitConfig()
+
+			for p := 0; p < len(system_config.Options.HoldPkg); p++ {
+				keep_packages[system_config.Options.HoldPkg[p]] = true
+			}
+
+			for p := 0; p < len(system_config.Options.IgnorePkg); p++ {
+				keep_packages[system_config.Options.IgnorePkg[p]] = true
+			}
+
+			for p := 0; p < len(system_config.Options.IgnoreGroup); p++ {
+				keep_packages[system_config.Options.IgnoreGroup[p]] = true
+			}
+
 			package_to_filenames := make(map[string][]string, 0)
 			package_to_versions := make(map[string][]types.Version, 0)
 
 			for filename, pkg := range packages {
-
 
 				_, ok1 := package_to_filenames[pkg.Name]
 
@@ -51,7 +65,9 @@ func Cleanup(sync_folder string, pkgs_folder string) bool {
 
 				console.Progress("Package " + pkgname)
 
-				if len(versions) > 1 {
+				_, keep := keep_packages[pkgname]
+
+				if keep == false && len(versions) > 1 {
 
 					var last_version_index int = -1
 
