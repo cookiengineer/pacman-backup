@@ -4,8 +4,17 @@
 Offline Pacman Cache management tool that allows off-the-grid updates via
 sneakernet (usb drives) or mesh Wi-Fi networks.
 
+## GTK Usage
 
-## Share Updates via USB Drive
+The GTK4 UI is running the same [actions](./source/actions) in the background, and
+it features a tabbed view for each of the different steps. For more screenshots,
+take a look at the [docs](./docs) folder.
+
+![Update View](./docs/01-update.png)
+
+## CLI Usage
+
+### Share Updates via USB Drive
 
 In the below example, make sure that `usb-drive` is writable. Replace the path with
 the correct one that points to your mounted USB drive.
@@ -28,7 +37,7 @@ sync;
 pacman-backup upgrade /run/media/$USER/usb-drive;
 ```
 
-## Share Updates via Wi-Fi Mesh Network
+### Share Updates via Wi-Fi Mesh Network
 
 In the below example, the machine _with_ internet connection has the IP `192.168.0.10`.
 Replace the IP with the correct one that matches your setup. If in doubt, use `ip` or `ifconfig`.
@@ -52,8 +61,7 @@ sudo pacman-backup download http://192.168.0.10:15678/;
 sudo pacman-backup upgrade;
 ```
 
-
-## Manual Export and Import of Database Files and Package Cache
+### Manual Export and Import of Database Files and Package Cache
 
 If you don't trust automated upgrades and want to use `pacman` directly, that's fine. You
 can do so by using `export` on the machine with internet connection and `import` on the
