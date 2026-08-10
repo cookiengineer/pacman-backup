@@ -16,10 +16,8 @@ extern gboolean cIdleCallback(gpointer data);
 extern void cListBoxRowActivated(GtkListBox *box, GtkListBoxRow *row, gpointer data);
 */
 import "C"
-import (
-	"sync"
-	"unsafe"
-)
+import "sync"
+import "unsafe"
 
 var (
 	signalCallbacks sync.Map
