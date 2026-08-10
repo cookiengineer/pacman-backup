@@ -3,7 +3,8 @@
 GO="$(which go 2> /dev/null)";
 ROOT="$(pwd)";
 
-build() {
+# CLI build
+build_cli() {
 
 	local go_os="${1}";
 	local go_arch="${2}";
@@ -32,6 +33,36 @@ build() {
 
 
 
-build "linux" "amd64";
-build "linux" "arm64";
+build_cli "linux" "amd64";
+build_cli "linux" "arm64";
+
+# GUI build requires GTK4 development headers and CGo
+build_gui() {
+
+	local go_os="${1}";
+	local go_arch="${2}";
+
+	if [[ ! -d "${ROOT}/build" ]]; then
+		mkdir -p "${ROOT}/build";
+	fi;
+
+	cd "${ROOT}/source";
+	env CGO_ENABLED=1 GOOS="${go_os}" GOARCH="${go_arch}" ${GO} build -ldflags "-s -w" -o "${ROOT}/build/pacman-backup-gui-${go_os}_${go_arch}" "${ROOT}/source/cmds/pacman-backup-gui/main.go";
+
+	if [[ $? == 0 ]]; then
+		echo -e "- Build GUI ${go_os} / ${go_arch}: [\e[32mok\e[0m]";
+		return 1;
+	else
+		echo -e "- Build GUI ${go_os} / ${go_arch}: [\e[31mfail\e[0m]";
+		return 0;
+	fi;
+
+}
+
+if pkg-config --exists gtk4 2> /dev/null; then
+	build_gui "linux" "amd64";
+	build_gui "linux" "arm64";
+else
+	echo -e "- Build GUI: [\e[33mskipped\e[0m] (gtk4 headers not installed)";
+fi;
 
