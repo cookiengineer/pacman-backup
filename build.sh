@@ -61,7 +61,6 @@ build_gui() {
 
 if pkg-config --exists gtk4 2> /dev/null; then
 	build_gui "linux" "amd64";
-	build_gui "linux" "arm64";
 else
 	echo -e "- Build GUI: [\e[33mskipped\e[0m] (gtk4 headers not installed)";
 fi;
