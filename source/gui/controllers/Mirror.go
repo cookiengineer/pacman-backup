@@ -6,6 +6,7 @@ import "pacman-backup/actions"
 import "pacman-backup/structs"
 import "context"
 import "os"
+import "time"
 
 func NewMirror(window *gtk.Window) *views.Mirror {
 
@@ -34,20 +35,49 @@ func NewMirror(window *gtk.Window) *views.Mirror {
 			view.AppendTerminal("Starting mirror server on http://localhost:15678 ...\n")
 			view.SetStatus("Mirror running on http://localhost:15678")
 
+			console := structs.NewConsole(nil, nil, 0)
+			done    := make(chan bool, 1)
+			ticker  := time.NewTicker(100 * time.Millisecond)
+
+			go func() {
+				done <- actions.Serve(console, syncFolder, pkgsFolder)
+			}()
+
 			go func() {
 
-				console := structs.NewConsole(nil, nil, 0)
-				actions.Serve(console, syncFolder, pkgsFolder)
+				for {
 
-				gtk.RunOnMain(func() {
+					select {
+					case <-ticker.C:
 
-					view.AppendTerminal("Mirror server stopped\n")
-					view.SetStatus("Mirror stopped")
+						gtk.RunOnMain(func() {
+							view.RenderTerminal(console)
+							view.ScrollToBottom()
+						})
 
-					view.Start.SetSensitive(true)
-					view.Stop.SetSensitive(false)
+					case result := <-done:
 
-				})
+						gtk.RunOnMain(func() {
+
+							view.RenderTerminal(console)
+							view.ScrollToBottom()
+
+							if result {
+								view.SetStatus("Mirror stopped successfully")
+							} else {
+								view.SetStatus("<span foreground='red'>Mirror failed</span>")
+							}
+
+							view.Start.SetSensitive(true)
+							view.Stop.SetSensitive(false)
+
+						})
+
+						return
+
+					}
+
+				}
 
 			}()
 

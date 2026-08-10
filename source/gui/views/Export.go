@@ -9,6 +9,7 @@ type Export struct {
 	root             *gtk.Box
 	status           *gtk.Label
 	terminal         *gtk.TextView
+	terminal_length  int
 	terminal_wrapper *gtk.ScrolledWindow
 }
 
@@ -27,7 +28,7 @@ func NewExport(parent unsafe.Pointer, onExport func(folder string), onCleanup fu
 	view.root.SetMarginBottom(12)
 
 	header := gtk.NewLabel("")
-	header.SetMarkup("<b>Export &amp; Cleanup</b>")
+	header.SetMarkup("<b>Export and Cleanup</b>")
 	header.SetXAlign(0.0)
 	header.SetMarginBottom(2)
 	view.root.Append(header.AsPtr())
@@ -111,14 +112,20 @@ func (view *Export) ShowTerminal() {
 
 func (view *Export) ClearTerminal() {
 	view.terminal.Clear()
+	view.terminal_length = 0
 }
 
 func (view *Export) ScrollToBottom() {
 	view.terminal.ScrollToBottom()
 }
 
-func (view *Export) RenderConsole(console *structs.Console) {
-	RenderConsole(console, view.terminal)
+func (view *Export) RenderTerminal(console *structs.Console) {
+
+	if console.Length() > view.terminal_length {
+		RenderConsole(console, view.terminal, view.terminal_length)
+		view.terminal_length = console.Length()
+	}
+
 }
 
 func (view *Export) SetStatus(text string) {

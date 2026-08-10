@@ -1,7 +1,9 @@
 package sudo
 
+import "context"
 import "os/exec"
 import "strings"
+import "time"
 
 func Command(args ...string) *exec.Cmd {
 
@@ -13,7 +15,10 @@ func Command(args ...string) *exec.Cmd {
 
 	} else {
 
-		cmd := exec.Command("sudo", append([]string{"-S", "-k", args[0]}, args[1:]...)...)
+		ctx, cancel := context.WithTimeout(context.Background(), 30 * time.Second)
+		_ = cancel
+
+		cmd := exec.CommandContext(ctx, "sudo", append([]string{"-S", "-k", args[0]}, args[1:]...)...)
 		cmd.Stdin = strings.NewReader(GetPassword() + "\n")
 
 		return cmd

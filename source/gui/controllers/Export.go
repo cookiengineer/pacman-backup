@@ -5,6 +5,7 @@ import "pacman-backup/gui/views"
 import "pacman-backup/actions"
 import "pacman-backup/structs"
 import "os"
+import "time"
 
 func NewExport(window *gtk.Window) *views.Export {
 
@@ -27,23 +28,46 @@ func NewExport(window *gtk.Window) *views.Export {
 			view.ClearTerminal()
 			view.SetStatus("Exporting ...")
 
+			console := structs.NewConsole(nil, nil, 0)
+			done    := make(chan bool, 1)
+			ticker  := time.NewTicker(100 * time.Millisecond)
+
+			go func() {
+				done <- actions.Export(console, syncFolder, pkgsFolder)
+			}()
+
 			go func() {
 
-				console := structs.NewConsole(nil, nil, 0)
-				result := actions.Export(console, syncFolder, pkgsFolder)
+				for {
 
-				gtk.RunOnMain(func() {
+					select {
+					case <-ticker.C:
 
-					view.RenderConsole(console)
-					view.ScrollToBottom()
+						gtk.RunOnMain(func() {
+							view.RenderTerminal(console)
+							view.ScrollToBottom()
+						})
 
-					if result {
-						view.SetStatus("Export completed successfully")
-					} else {
-						view.SetStatus("<span foreground='red'>Export failed</span>")
+					case result := <-done:
+
+						gtk.RunOnMain(func() {
+
+							view.RenderTerminal(console)
+							view.ScrollToBottom()
+
+							if result {
+								view.SetStatus("Export completed successfully")
+							} else {
+								view.SetStatus("<span foreground='red'>Export failed</span>")
+							}
+
+						})
+
+						return
+
 					}
 
-				})
+				}
 
 			}()
 
@@ -62,23 +86,46 @@ func NewExport(window *gtk.Window) *views.Export {
 			view.ClearTerminal()
 			view.SetStatus("Cleaning up ...")
 
+			console := structs.NewConsole(nil, nil, 0)
+			done    := make(chan bool, 1)
+			ticker  := time.NewTicker(100 * time.Millisecond)
+
+			go func() {
+				done <- actions.Cleanup(console, syncFolder, pkgsFolder)
+			}()
+
 			go func() {
 
-				console := structs.NewConsole(nil, nil, 0)
-				result := actions.Cleanup(console, syncFolder, pkgsFolder)
+				for {
 
-				gtk.RunOnMain(func() {
+					select {
+					case <-ticker.C:
 
-					view.RenderConsole(console)
-					view.ScrollToBottom()
+						gtk.RunOnMain(func() {
+							view.RenderTerminal(console)
+							view.ScrollToBottom()
+						})
 
-					if result {
-						view.SetStatus("Cleanup completed successfully")
-					} else {
-						view.SetStatus("<span foreground='red'>Cleanup failed</span>")
+					case result := <-done:
+
+						gtk.RunOnMain(func() {
+
+							view.RenderTerminal(console)
+							view.ScrollToBottom()
+
+							if result {
+								view.SetStatus("Cleanup completed successfully")
+							} else {
+								view.SetStatus("<span foreground='red'>Cleanup failed</span>")
+							}
+
+						})
+
+						return
+
 					}
 
-				})
+				}
 
 			}()
 

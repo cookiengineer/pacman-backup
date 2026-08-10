@@ -9,6 +9,7 @@ type Import struct {
 	root             *gtk.Box
 	status           *gtk.Label
 	terminal         *gtk.TextView
+	terminal_length  int
 	terminal_wrapper *gtk.ScrolledWindow
 }
 
@@ -27,7 +28,7 @@ func NewImport(parent unsafe.Pointer, onImport func(folder string), onUpgrade fu
 	view.root.SetMarginBottom(12)
 
 	header := gtk.NewLabel("")
-	header.SetMarkup("<b>Import &amp; Upgrade</b>")
+	header.SetMarkup("<b>Import and Upgrade</b>")
 	header.SetXAlign(0.0)
 	header.SetMarginBottom(2)
 	view.root.Append(header.AsPtr())
@@ -111,14 +112,20 @@ func (view *Import) ShowTerminal() {
 
 func (view *Import) ClearTerminal() {
 	view.terminal.Clear()
+	view.terminal_length = 0
 }
 
 func (view *Import) ScrollToBottom() {
 	view.terminal.ScrollToBottom()
 }
 
-func (view *Import) RenderConsole(console *structs.Console) {
-	RenderConsole(console, view.terminal)
+func (view *Import) RenderTerminal(console *structs.Console) {
+
+	if console.Length() > view.terminal_length {
+		RenderConsole(console, view.terminal, view.terminal_length)
+		view.terminal_length = console.Length()
+	}
+
 }
 
 func (view *Import) SetStatus(text string) {

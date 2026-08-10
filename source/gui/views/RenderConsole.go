@@ -2,33 +2,37 @@ package views
 
 import "pacman-backup/gui/gtk"
 import "pacman-backup/structs"
+import "fmt"
 
-func RenderConsole(console *structs.Console, textView *gtk.TextView) {
+func RenderConsole(console *structs.Console, text_view *gtk.TextView, offset int) {
 
 	messages := console.Messages
 
-	for _, msg := range messages {
+	if len(messages) > offset {
 
-		prefix := ""
+		for m := offset; m < len(messages); m++ {
 
-		switch msg.Method {
-		case "Error":
-			prefix = "[ERROR] "
-		case "Warn":
-			prefix = "[WARN]  "
-		case "Info":
-			prefix = "[INFO]  "
-		case "Progress":
-			prefix = "        "
-		case "Group":
-			prefix = "------> "
-		case "GroupEnd":
-			prefix = "<------ "
-		default:
-			prefix = "        "
+			message := messages[m]
+
+			switch message.Method {
+			case "Error":
+				text_view.Append(fmt.Sprintf("%s | %s\n", "[ERROR]", message.Value))
+			case "Warn":
+				text_view.Append(fmt.Sprintf("%s | %s\n", "[WARN] ", message.Value))
+			case "Info":
+				text_view.Append(fmt.Sprintf("%s | %s\n", "[INFO] ", message.Value))
+			case "Progress":
+				// Do Nothing
+			case "Group":
+				text_view.Append(fmt.Sprintf("%s-\\ %s\n", "-------", message.Value))
+			case "GroupEnd":
+				text_view.Append(fmt.Sprintf("%s-/ %s\n", "-------", message.Value))
+			case "Log":
+				text_view.Append(fmt.Sprintf("%s | %s\n", "       ", message.Value))
+			default:
+			}
+
 		}
-
-		textView.Append(prefix + msg.Value + "\n")
 
 	}
 

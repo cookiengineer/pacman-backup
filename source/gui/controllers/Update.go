@@ -8,6 +8,7 @@ import "pacman-backup/pacman"
 import "pacman-backup/structs"
 import "pacman-backup/sudo"
 import "fmt"
+import "time"
 
 func NewUpdate(window *gtk.Window) *views.Update {
 
@@ -30,48 +31,42 @@ func NewUpdate(window *gtk.Window) *views.Update {
 
 				view.ShowTerminal()
 				view.ClearTerminal()
-				view.AppendTerminal(fmt.Sprintf("Synchronizing databases from %s ...\n\n", mirror))
+				view.AppendTerminal(fmt.Sprintf("Synchronizing databases and packages from %s ...\n\n", mirror))
+
+				console := structs.NewConsole(nil, nil, 0)
+				done    := make(chan bool, 1)
+				ticker  := time.NewTicker(100 * time.Millisecond)
 
 				go func() {
-
-					console := structs.NewConsole(nil, nil, 0)
-					actions.Download(console, mirror, dbpath+"/sync", cachedir)
-
-					gtk.RunOnMain(func() {
-						view.RenderConsole(console)
-						view.ScrollToBottom()
-						view.SetPacnewFiles(scan_pacnew_files())
-					})
-
+					done <- actions.Download(console, mirror, dbpath+"/sync", cachedir)
 				}()
 
-			})
-
-		},
-		func() {
-
-			dialogs.RequestSudo(window, func() {
-
-				if sudo.NeedsSudo() == true {
-					return
-				}
-
-				mirror := view.GetSelectedMirror()
-
-				view.ShowTerminal()
-				view.ClearTerminal()
-				view.AppendTerminal("Downloading packages from " + mirror + " ...\n\n")
-
 				go func() {
 
-					console := structs.NewConsole(nil, nil, 0)
-					actions.Download(console, mirror, dbpath+"/sync", cachedir)
+					for {
 
-					gtk.RunOnMain(func() {
-						view.RenderConsole(console)
-						view.ScrollToBottom()
-						view.SetPacnewFiles(scan_pacnew_files())
-					})
+						select {
+						case <-ticker.C:
+
+							gtk.RunOnMain(func() {
+								view.RenderTerminal(console)
+								view.ScrollToBottom()
+								view.SetPacnewFiles(scan_pacnew_files())
+							})
+
+						case <-done:
+
+							gtk.RunOnMain(func() {
+								view.RenderTerminal(console)
+								view.ScrollToBottom()
+								view.SetPacnewFiles(scan_pacnew_files())
+							})
+
+							return
+
+						}
+
+					}
 
 				}()
 

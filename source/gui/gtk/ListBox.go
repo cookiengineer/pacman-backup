@@ -31,6 +31,13 @@ func (l *ListBox) Append(text string) {
 	C.gtk_list_box_append((*C.GtkListBox)(unsafe.Pointer(l.widget)), label)
 }
 
+func (l *ListBox) AppendRow(row *ListBoxRow) {
+	C.gtk_list_box_append(
+		(*C.GtkListBox)(unsafe.Pointer(l.widget)),
+		row.widget,
+	)
+}
+
 func (l *ListBox) Clear() {
 	box := (*C.GtkListBox)(unsafe.Pointer(l.widget))
 

@@ -12,6 +12,7 @@ type Mirror struct {
 	root             *gtk.Box
 	status           *gtk.Label
 	terminal         *gtk.TextView
+	terminal_length  int
 	terminal_wrapper *gtk.ScrolledWindow
 }
 
@@ -30,7 +31,7 @@ func NewMirror(parent unsafe.Pointer, onStart func(folder string), onStop func()
 	view.root.SetMarginBottom(12)
 
 	server_header := gtk.NewLabel("")
-	server_header.SetMarkup("<b>Local Mirror</b>")
+	server_header.SetMarkup("<b>Pacman Mirror</b>")
 	server_header.SetXAlign(0.0)
 	server_header.SetMarginBottom(2)
 	view.root.Append(server_header.AsPtr())
@@ -139,20 +140,26 @@ func (view *Mirror) ShowTerminal() {
 	view.terminal_wrapper.SetVisible(true)
 }
 
-func (view *Mirror) RenderConsole(console *structs.Console) {
-	RenderConsole(console, view.terminal)
-}
-
 func (view *Mirror) AppendTerminal(text string) {
 	view.terminal.Append(text)
 }
 
 func (view *Mirror) ClearTerminal() {
 	view.terminal.Clear()
+	view.terminal_length = 0
 }
 
 func (view *Mirror) ScrollToBottom() {
 	view.terminal.ScrollToBottom()
+}
+
+func (view *Mirror) RenderTerminal(console *structs.Console) {
+
+	if console.Length() > view.terminal_length {
+		RenderConsole(console, view.terminal, view.terminal_length)
+		view.terminal_length = console.Length()
+	}
+
 }
 
 func (view *Mirror) SetStatus(text string) {

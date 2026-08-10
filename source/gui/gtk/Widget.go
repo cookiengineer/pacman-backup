@@ -31,12 +31,20 @@ func (w *Widget) SetMarginBottom(margin int) {
 	C.gtk_widget_set_margin_bottom(w.widget, C.int(margin))
 }
 
+func (w *Widget) SetHAlign(align Align) {
+	C.gtk_widget_set_halign(w.widget, C.GtkAlign(align))
+}
+
 func (w *Widget) SetHExpand(expand bool) {
 	if expand {
 		C.gtk_widget_set_hexpand(w.widget, C.TRUE)
 	} else {
 		C.gtk_widget_set_hexpand(w.widget, C.FALSE)
 	}
+}
+
+func (w *Widget) SetVAlign(align Align) {
+	C.gtk_widget_set_valign(w.widget, C.GtkAlign(align))
 }
 
 func (w *Widget) SetVExpand(expand bool) {

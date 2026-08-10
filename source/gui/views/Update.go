@@ -10,8 +10,8 @@ type Update struct {
 	mirrors_list     []string
 	root             *gtk.Box
 	reviews_header   *gtk.Label
-	reviews_wrapper  *gtk.ScrolledWindow
 	terminal         *gtk.TextView
+	terminal_length  int
 	terminal_wrapper *gtk.ScrolledWindow
 }
 
@@ -19,7 +19,7 @@ func (view *Update) AsPtr() unsafe.Pointer {
 	return view.root.AsPtr()
 }
 
-func NewUpdate(parent unsafe.Pointer, mirrors []string, onSync func(), onDownload func()) *Update {
+func NewUpdate(parent unsafe.Pointer, mirrors []string, onSync func()) *Update {
 
 	view := &Update{
 		mirrors_list: mirrors,
@@ -32,7 +32,7 @@ func NewUpdate(parent unsafe.Pointer, mirrors []string, onSync func(), onDownloa
 	view.root.SetMarginBottom(12)
 
 	header := gtk.NewLabel("")
-	header.SetMarkup("<b>System Updates</b>")
+	header.SetMarkup("<b>System Update</b>")
 	header.SetXAlign(0.0)
 	header.SetMarginBottom(2)
 	view.root.Append(header.AsPtr())
@@ -51,21 +51,13 @@ func NewUpdate(parent unsafe.Pointer, mirrors []string, onSync func(), onDownloa
 	buttons.SetMarginBottom(6)
 	view.root.Append(buttons.AsPtr())
 
-	sync_button := gtk.NewButton("Sync Databases")
+	sync_button := gtk.NewButton("Download Databases and Packages")
 	sync_button.OnClick(func() {
 		if onSync != nil {
 			onSync()
 		}
 	})
 	buttons.Append(sync_button.AsPtr())
-
-	download_button := gtk.NewButton("Download Packages")
-	download_button.OnClick(func() {
-		if onDownload != nil {
-			onDownload()
-		}
-	})
-	buttons.Append(download_button.AsPtr())
 
 	view.terminal_wrapper = gtk.NewScrolledWindow()
 	view.terminal_wrapper.SetPolicy(gtk.PolicyNever, gtk.PolicyAutomatic)
@@ -83,21 +75,14 @@ func NewUpdate(parent unsafe.Pointer, mirrors []string, onSync func(), onDownloa
 	view.terminal_wrapper.SetChild(view.terminal.AsPtr())
 
 	view.reviews_header = gtk.NewLabel("")
-	view.reviews_header.SetMarkup("<b>Configuration files to review (.pacnew / .pacsave):</b>")
+	view.reviews_header.SetMarkup("<b>Please review these files:</b>")
 	view.reviews_header.SetXAlign(0.0)
 	view.reviews_header.SetMarginBottom(4)
 	view.reviews_header.SetVisible(false)
 	view.root.Append(view.reviews_header.AsPtr())
 
-	view.reviews_wrapper = gtk.NewScrolledWindow()
-	view.reviews_wrapper.SetPolicy(gtk.PolicyNever, gtk.PolicyAutomatic)
-	view.reviews_wrapper.SetVExpand(true)
-	view.reviews_wrapper.SetSizeRequest(-1, 120)
-	view.reviews_wrapper.SetVisible(false)
-	view.root.Append(view.reviews_wrapper.AsPtr())
-
 	view.Reviews = gtk.NewListBox()
-	view.reviews_wrapper.SetChild(view.Reviews.AsPtr())
+	view.root.Append(view.Reviews.AsPtr())
 
 	return view
 
@@ -113,14 +98,20 @@ func (view *Update) AppendTerminal(text string) {
 
 func (view *Update) ClearTerminal() {
 	view.terminal.Clear()
+	view.terminal_length = 0
 }
 
 func (view *Update) ScrollToBottom() {
 	view.terminal.ScrollToBottom()
 }
 
-func (view *Update) RenderConsole(console *structs.Console) {
-	RenderConsole(console, view.terminal)
+func (view *Update) RenderTerminal(console *structs.Console) {
+
+	if console.Length() > view.terminal_length {
+		RenderConsole(console, view.terminal, view.terminal_length)
+		view.terminal_length = console.Length()
+	}
+
 }
 
 func (view *Update) SetPacnewFiles(files []string) {
@@ -128,15 +119,23 @@ func (view *Update) SetPacnewFiles(files []string) {
 	view.Reviews.Clear()
 
 	for _, file := range files {
-		view.Reviews.Append(file)
+
+		row   := gtk.NewListBoxRow()
+		label := gtk.NewLabel(file)
+		label.SetXAlign(0.0)
+		label.SetHAlign(gtk.AlignFill)
+
+		row.SetChild(&label.Widget)
+		view.Reviews.AppendRow(row)
+
 	}
 
 	if len(files) > 0 {
 		view.reviews_header.SetVisible(true)
-		view.reviews_wrapper.SetVisible(true)
+		view.Reviews.SetVisible(true)
 	} else {
 		view.reviews_header.SetVisible(false)
-		view.reviews_wrapper.SetVisible(false)
+		view.Reviews.SetVisible(false)
 	}
 
 }

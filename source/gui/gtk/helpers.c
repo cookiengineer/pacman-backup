@@ -2,7 +2,7 @@
 #include <stdlib.h>
 
 extern void goSignalCallback(int id);
-extern gboolean goIdleCallback(int id);
+extern gboolean goMainCallback(int id);
 extern void goFileDialogCallback(char* path, int id);
 
 gpointer intToPointer(int id) {
@@ -18,9 +18,9 @@ void cSignalCallback(GtkWidget *widget, gpointer data) {
 	goSignalCallback(id);
 }
 
-gboolean cIdleCallback(gpointer data) {
+gboolean cMainCallback(gpointer data) {
 	int id = GPOINTER_TO_INT(data);
-	return goIdleCallback(id);
+	return goMainCallback(id);
 }
 
 void cListBoxRowActivated(GtkListBox *box, GtkListBoxRow *row, gpointer data) {

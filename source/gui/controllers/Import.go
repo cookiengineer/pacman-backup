@@ -8,6 +8,7 @@ import "pacman-backup/pacman"
 import "pacman-backup/structs"
 import "pacman-backup/sudo"
 import "os"
+import "time"
 
 func NewImport(window *gtk.Window) *views.Import {
 
@@ -37,23 +38,46 @@ func NewImport(window *gtk.Window) *views.Import {
 				view.ClearTerminal()
 				view.SetStatus("Importing ...")
 
+				console := structs.NewConsole(nil, nil, 0)
+				done    := make(chan bool, 1)
+				ticker  := time.NewTicker(100 * time.Millisecond)
+
+				go func() {
+					done <- actions.Import(console, syncFolder, pkgsFolder)
+				}()
+
 				go func() {
 
-					console := structs.NewConsole(nil, nil, 0)
-					result := actions.Import(console, syncFolder, pkgsFolder)
+					for {
 
-					gtk.RunOnMain(func() {
+						select {
+						case <-ticker.C:
 
-						view.RenderConsole(console)
-						view.ScrollToBottom()
+							gtk.RunOnMain(func() {
+								view.RenderTerminal(console)
+								view.ScrollToBottom()
+							})
 
-						if result {
-							view.SetStatus("Import completed successfully")
-						} else {
-							view.SetStatus("<span foreground='red'>Import failed</span>")
+						case result := <-done:
+
+							gtk.RunOnMain(func() {
+
+								view.RenderTerminal(console)
+								view.ScrollToBottom()
+
+								if result {
+									view.SetStatus("Import completed successfully")
+								} else {
+									view.SetStatus("<span foreground='red'>Import failed</span>")
+								}
+
+							})
+
+							return
+
 						}
 
-					})
+					}
 
 				}()
 
@@ -76,6 +100,7 @@ func NewImport(window *gtk.Window) *views.Import {
 
 				config := pacman.InitConfig("/etc/pacman.conf")
 				mirror := config.ToMirror()
+
 				syncFolder := folder + "/sync"
 				pkgsFolder := folder + "/pkgs"
 				os.MkdirAll(syncFolder, 0755)
@@ -85,23 +110,46 @@ func NewImport(window *gtk.Window) *views.Import {
 				view.ClearTerminal()
 				view.SetStatus("Upgrading ...")
 
+				console := structs.NewConsole(nil, nil, 0)
+				done    := make(chan bool, 1)
+				ticker  := time.NewTicker(100 * time.Millisecond)
+
+				go func() {
+					done <- actions.Upgrade(console, mirror, syncFolder, pkgsFolder)
+				}()
+
 				go func() {
 
-					console := structs.NewConsole(nil, nil, 0)
-					result := actions.Upgrade(console, mirror, syncFolder, pkgsFolder)
+					for {
 
-					gtk.RunOnMain(func() {
+						select {
+						case <-ticker.C:
 
-						view.RenderConsole(console)
-						view.ScrollToBottom()
+							gtk.RunOnMain(func() {
+								view.RenderTerminal(console)
+								view.ScrollToBottom()
+							})
 
-						if result {
-							view.SetStatus("Upgrade completed successfully")
-						} else {
-							view.SetStatus("<span foreground='red'>Upgrade failed</span>")
+						case result := <-done:
+
+							gtk.RunOnMain(func() {
+
+								view.RenderTerminal(console)
+								view.ScrollToBottom()
+
+								if result {
+									view.SetStatus("Upgrade completed successfully")
+								} else {
+									view.SetStatus("<span foreground='red'>Upgrade failed</span>")
+								}
+
+							})
+
+							return
+
 						}
 
-					})
+					}
 
 				}()
 
