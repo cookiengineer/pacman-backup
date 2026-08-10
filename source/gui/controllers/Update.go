@@ -12,7 +12,11 @@ func NewUpdate(window *gtk.Window) *views.Update {
 
 	var view *views.Update
 
-	view = views.NewUpdate(window.AsPtr(),
+	config := pacman.InitConfig()
+	dbpath := config.Options.DBPath
+	cachedir := config.Options.CacheDir
+
+	view = views.NewUpdate(window.AsPtr(), config.Repositories.Core,
 		func() {
 
 			dialogs.RequestPassword(window.AsPtr(), func(password string) {
@@ -21,8 +25,7 @@ func NewUpdate(window *gtk.Window) *views.Update {
 					return
 				}
 
-				config := pacman.InitConfig()
-				mirror := config.ToMirror()
+				mirror := view.GetSelectedMirror()
 
 				view.ShowTerminal()
 				view.ClearTerminal()
@@ -31,7 +34,7 @@ func NewUpdate(window *gtk.Window) *views.Update {
 				go func() {
 
 					console := structs.NewConsole(nil, nil, 0)
-					actions.Download(console, mirror, config.Options.DBPath+"/sync", config.Options.CacheDir)
+					actions.Download(console, mirror, dbpath+"/sync", cachedir)
 
 					gtk.RunOnMain(func() {
 						view.RenderConsole(console)
@@ -52,8 +55,7 @@ func NewUpdate(window *gtk.Window) *views.Update {
 					return
 				}
 
-				config := pacman.InitConfig()
-				mirror := config.ToMirror()
+				mirror := view.GetSelectedMirror()
 
 				view.ShowTerminal()
 				view.ClearTerminal()
@@ -62,7 +64,7 @@ func NewUpdate(window *gtk.Window) *views.Update {
 				go func() {
 
 					console := structs.NewConsole(nil, nil, 0)
-					actions.Download(console, mirror, config.Options.DBPath+"/sync", config.Options.CacheDir)
+					actions.Download(console, mirror, dbpath+"/sync", cachedir)
 
 					gtk.RunOnMain(func() {
 						view.RenderConsole(console)

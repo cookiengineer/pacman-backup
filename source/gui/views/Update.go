@@ -6,6 +6,8 @@ import "unsafe"
 
 type Update struct {
 	Reviews          *gtk.ListBox
+	Mirrors          *gtk.DropDown
+	mirrors_list     []string
 	root             *gtk.Box
 	reviews_header   *gtk.Label
 	reviews_wrapper  *gtk.ScrolledWindow
@@ -17,9 +19,11 @@ func (view *Update) AsPtr() unsafe.Pointer {
 	return view.root.AsPtr()
 }
 
-func NewUpdate(parent unsafe.Pointer, onSync func(), onDownload func()) *Update {
+func NewUpdate(parent unsafe.Pointer, mirrors []string, onSync func(), onDownload func()) *Update {
 
-	view := &Update{}
+	view := &Update{
+		mirrors_list: mirrors,
+	}
 
 	view.root = gtk.NewBox(gtk.OrientationVertical, 8)
 	view.root.SetMarginStart(12)
@@ -38,6 +42,10 @@ func NewUpdate(parent unsafe.Pointer, onSync func(), onDownload func()) *Update 
 	description.SetXAlign(0.0)
 	description.SetMarginBottom(12)
 	view.root.Append(description.AsPtr())
+
+	view.Mirrors = gtk.NewDropDown(mirrors)
+	view.Mirrors.SetMarginBottom(12)
+	view.root.Append(view.Mirrors.AsPtr())
 
 	buttons := gtk.NewBox(gtk.OrientationHorizontal, 8)
 	buttons.SetMarginBottom(6)
@@ -130,5 +138,17 @@ func (view *Update) SetPacnewFiles(files []string) {
 		view.reviews_header.SetVisible(false)
 		view.reviews_wrapper.SetVisible(false)
 	}
+
+}
+
+func (view *Update) GetSelectedMirror() string {
+
+	idx := view.Mirrors.GetSelected()
+
+	if int(idx) < len(view.mirrors_list) {
+		return view.mirrors_list[idx]
+	}
+
+	return ""
 
 }
