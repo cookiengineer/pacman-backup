@@ -34,10 +34,9 @@ type Config struct {
 		RemoteFileSigLevel string   `json:"RemoteFileSigLevel"`
 	} `json:"options"`
 	Repositories struct {
-		Core      []string `json:"core"`
-		Extra     []string `json:"extra"`
-		Community []string `json:"community"`
-		Multilib  []string `json:"multilib"`
+		Core     []string `json:"core"`
+		Extra    []string `json:"extra"`
+		Multilib []string `json:"multilib"`
 	} `json:"repositories"`
 }
 
@@ -70,7 +69,6 @@ func InitConfig() Config {
 
 	config.Repositories.Core = make([]string, 0)
 	config.Repositories.Extra = make([]string, 0)
-	config.Repositories.Community = make([]string, 0)
 	config.Repositories.Multilib = make([]string, 0)
 
 	config.Parse("/etc/pacman.conf")
@@ -115,14 +113,12 @@ func NewConfig(mirror string, sync_folder string, pkgs_folder string) Config {
 
 	config.Repositories.Core = make([]string, 0)
 	config.Repositories.Extra = make([]string, 0)
-	config.Repositories.Community = make([]string, 0)
 	config.Repositories.Multilib = make([]string, 0)
 
 	if strings.HasPrefix(mirror, "https://") || strings.HasPrefix(mirror, "http://") {
 
 		config.Repositories.Core = append(config.Repositories.Core, mirror)
 		config.Repositories.Extra = append(config.Repositories.Extra, mirror)
-		config.Repositories.Community = append(config.Repositories.Community, mirror)
 		config.Repositories.Multilib = append(config.Repositories.Multilib, mirror)
 
 	}
@@ -283,8 +279,6 @@ func (config *Config) Parse(file string) {
 									config.Repositories.Core = append(config.Repositories.Core, val)
 								} else if section == "extra" {
 									config.Repositories.Extra = append(config.Repositories.Extra, val)
-								} else if section == "community" {
-									config.Repositories.Community = append(config.Repositories.Community, val)
 								} else if section == "multilib" {
 									config.Repositories.Multilib = append(config.Repositories.Multilib, val)
 								}
@@ -350,8 +344,6 @@ func (config *Config) ParseMirrorlist(repository string, file string) {
 							config.Repositories.Core = append(config.Repositories.Core, val)
 						} else if repository == "extra" {
 							config.Repositories.Extra = append(config.Repositories.Extra, val)
-						} else if repository == "community" {
-							config.Repositories.Community = append(config.Repositories.Community, val)
 						} else if repository == "multilib" {
 							config.Repositories.Multilib = append(config.Repositories.Multilib, val)
 						}
@@ -465,17 +457,6 @@ func (config *Config) String() string {
 
 		for r := 0; r < len(config.Repositories.Extra); r++ {
 			lines = append(lines, "Server = " + config.Repositories.Extra[r])
-		}
-
-	}
-
-	lines = append(lines, "")
-	lines = append(lines, "[community]")
-
-	if len(config.Repositories.Community) > 0 {
-
-		for r := 0; r < len(config.Repositories.Community); r++ {
-			lines = append(lines, "Server = " + config.Repositories.Community[r])
 		}
 
 	}
