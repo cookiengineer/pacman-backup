@@ -1,7 +1,7 @@
 package pacman
 
+import "pacman-backup/sudo"
 import "os"
-import "os/exec"
 
 func Upgrade(config string) (error) {
 
@@ -10,7 +10,8 @@ func Upgrade(config string) (error) {
 	os.Setenv("TZ", "Europe/Greenwich")
 	os.Setenv("LC_TIME", "en_US")
 
-	cmd1 := exec.Command("pacman", "-Su", "--noconfirm", "--config", config)
+	// Always needs sudo rights
+	cmd1 := sudo.Command("pacman", "-Su", "--noconfirm", "--config", config)
 	err1 := cmd1.Run()
 
 	if err1 == nil {

@@ -24,7 +24,7 @@ func Cleanup(console *structs.Console, sync_folder string, pkgs_folder string) b
 			console.Log("Found " + strconv.Itoa(len(packages)) + " Packages")
 
 			keep_packages := make(map[string]bool)
-			system_config := pacman.InitConfig()
+			system_config := pacman.InitConfig("/etc/pacman.conf")
 
 			for p := 0; p < len(system_config.Options.HoldPkg); p++ {
 				keep_packages[system_config.Options.HoldPkg[p]] = true

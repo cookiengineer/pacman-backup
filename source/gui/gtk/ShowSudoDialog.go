@@ -9,7 +9,7 @@ extern const char* gtk_editable_get_text_wrapper(GtkEditable* editable);
 import "C"
 import "unsafe"
 
-func ShowPasswordDialog(parent unsafe.Pointer, onResult func(string)) {
+func ShowSudoDialog(parent unsafe.Pointer, onResult func(string)) {
 
 	window := C.gtk_window_new()
 	widget := (*C.GtkWidget)(unsafe.Pointer(window))

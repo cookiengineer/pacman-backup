@@ -27,7 +27,7 @@ func Download(console *structs.Console, mirror_url string, sync_folder string, p
 
 				update := updates[u]
 
-				console.Progress("Package " + update.Name + "@" + update.Version.String())
+				console.Progress("Downloading Package " + update.Name + "@" + update.Version.String() + " ...")
 
 				err := pacman.Download("/tmp/pacman-backup.conf", update.Name)
 
@@ -43,6 +43,8 @@ func Download(console *structs.Console, mirror_url string, sync_folder string, p
 						result = false
 					}
 
+				} else {
+					console.Info("Package " + update.Name + "@" + update.Version.String() + " downloaded")
 				}
 
 			}

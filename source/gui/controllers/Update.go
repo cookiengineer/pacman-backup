@@ -6,22 +6,23 @@ import "pacman-backup/gui/views"
 import "pacman-backup/actions"
 import "pacman-backup/pacman"
 import "pacman-backup/structs"
+import "pacman-backup/sudo"
 import "fmt"
 
 func NewUpdate(window *gtk.Window) *views.Update {
 
 	var view *views.Update
 
-	config := pacman.InitConfig()
+	config := pacman.InitConfig("/etc/pacman.conf")
 	dbpath := config.Options.DBPath
 	cachedir := config.Options.CacheDir
 
 	view = views.NewUpdate(window.AsPtr(), config.Repositories.Core,
 		func() {
 
-			dialogs.RequestPassword(window.AsPtr(), func(password string) {
+			dialogs.RequestSudo(window, func() {
 
-				if password == "" {
+				if sudo.NeedsSudo() == true {
 					return
 				}
 
@@ -49,9 +50,9 @@ func NewUpdate(window *gtk.Window) *views.Update {
 		},
 		func() {
 
-			dialogs.RequestPassword(window.AsPtr(), func(password string) {
+			dialogs.RequestSudo(window, func() {
 
-				if password == "" {
+				if sudo.NeedsSudo() == true {
 					return
 				}
 

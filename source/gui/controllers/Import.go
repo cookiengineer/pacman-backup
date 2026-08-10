@@ -6,6 +6,7 @@ import "pacman-backup/gui/views"
 import "pacman-backup/actions"
 import "pacman-backup/pacman"
 import "pacman-backup/structs"
+import "pacman-backup/sudo"
 import "os"
 
 func NewImport(window *gtk.Window) *views.Import {
@@ -20,9 +21,9 @@ func NewImport(window *gtk.Window) *views.Import {
 				return
 			}
 
-			dialogs.RequestPassword(window.AsPtr(), func(password string) {
+			dialogs.RequestSudo(window, func() {
 
-				if password == "" {
+				if sudo.NeedsSudo() == true {
 					view.SetStatus("<span foreground='red'>Sudo password required</span>")
 					return
 				}
@@ -66,14 +67,14 @@ func NewImport(window *gtk.Window) *views.Import {
 				return
 			}
 
-			dialogs.RequestPassword(window.AsPtr(), func(password string) {
+			dialogs.RequestSudo(window, func() {
 
-				if password == "" {
+				if sudo.NeedsSudo() == true {
 					view.SetStatus("<span foreground='red'>Sudo password required</span>")
 					return
 				}
 
-				config := pacman.InitConfig()
+				config := pacman.InitConfig("/etc/pacman.conf")
 				mirror := config.ToMirror()
 				syncFolder := folder + "/sync"
 				pkgsFolder := folder + "/pkgs"

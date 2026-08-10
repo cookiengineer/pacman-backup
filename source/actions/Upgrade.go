@@ -61,7 +61,7 @@ func Upgrade(console *structs.Console, mirror_url string, sync_folder string, pk
 
 	var result bool
 
-	local_config := pacman.InitConfig()
+	local_config := pacman.InitConfig("/etc/pacman.conf")
 	config := pacman.NewConfig(mirror_url, sync_folder, pkgs_folder)
 	config.Options.SyncFirst = []string{"archlinux-keyring"}
 

@@ -40,7 +40,7 @@ type Config struct {
 	} `json:"repositories"`
 }
 
-func InitConfig() Config {
+func InitConfig(path string) Config {
 
 	var config Config
 
@@ -71,7 +71,7 @@ func InitConfig() Config {
 	config.Repositories.Extra = make([]string, 0)
 	config.Repositories.Multilib = make([]string, 0)
 
-	config.Parse("/etc/pacman.conf")
+	config.Parse(path)
 
 	return config
 

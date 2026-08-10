@@ -193,7 +193,7 @@ func main() {
 			// pacman-backup download http://mirror:15678
 			if isMirror(os.Args[2]) {
 
-				config := pacman.InitConfig()
+				config := pacman.InitConfig("/etc/pacman.conf")
 				mirror := os.Args[2]
 
 				if isRootUser() {
@@ -206,7 +206,7 @@ func main() {
 			// pacman-backup download /mnt/usb-drive
 			} else if isFolder(os.Args[2]) {
 
-				config := pacman.InitConfig()
+				config := pacman.InitConfig("/etc/pacman.conf")
 				mirror := config.ToMirror()
 
 				if !isFolder(os.Args[2] + "/sync") {
@@ -265,7 +265,7 @@ func main() {
 			// pacman-backup upgrade /mnt/usb-drive
 			if isFolder(os.Args[2]) {
 
-				config := pacman.InitConfig()
+				config := pacman.InitConfig("/etc/pacman.conf")
 				mirror := config.ToMirror()
 
 				if !isFolder(os.Args[2] + "/sync") {
@@ -298,7 +298,7 @@ func main() {
 		if action == "cleanup" {
 
 			// pacman-backup cleanup
-			config := pacman.InitConfig()
+			config := pacman.InitConfig("/etc/pacman.conf")
 
 			if isFolder(config.Options.DBPath+"/sync") && isFolder(config.Options.CacheDir) {
 
@@ -313,7 +313,7 @@ func main() {
 		} else if action == "download" {
 
 			// pacman-backup download
-			config := pacman.InitConfig()
+			config := pacman.InitConfig("/etc/pacman.conf")
 			mirror := config.ToMirror()
 
 			console.Log(mirror)
@@ -333,7 +333,7 @@ func main() {
 
 		} else if action == "serve" {
 
-			config := pacman.InitConfig()
+			config := pacman.InitConfig("/etc/pacman.conf")
 
 			if isFolder(config.Options.CacheDir) {
 				actions.Serve(console, config.Options.DBPath+"/sync", config.Options.CacheDir)
@@ -341,7 +341,7 @@ func main() {
 
 		} else if action == "upgrade" {
 
-			config := pacman.InitConfig()
+			config := pacman.InitConfig("/etc/pacman.conf")
 			mirror := config.ToMirror()
 
 			if isFolder(config.Options.CacheDir) {

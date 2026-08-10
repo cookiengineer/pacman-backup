@@ -1,6 +1,7 @@
 package actions
 
 import "pacman-backup/pacman"
+import "pacman-backup/sudo"
 import "pacman-backup/structs"
 import "os"
 
@@ -8,7 +9,7 @@ func Import(console *structs.Console, sync_folder string, pkgs_folder string) bo
 
 	console.Group("actions/Import")
 
-	config := pacman.InitConfig()
+	config := pacman.InitConfig("/etc/pacman.conf")
 
 	stat1, err1 := os.Stat(sync_folder)
 	result_sync := true
@@ -31,7 +32,7 @@ func Import(console *structs.Console, sync_folder string, pkgs_folder string) bo
 
 					if err13 == nil {
 
-						err14 := os.WriteFile(config.Options.DBPath + "/sync/" + filename, buffer, 0666)
+						err14 := sudo.WriteFile(config.Options.DBPath + "/sync/" + filename, buffer, 0666)
 
 						if err14 != nil {
 							console.Error("File sync/" + filename + " failed to copy")
@@ -72,7 +73,7 @@ func Import(console *structs.Console, sync_folder string, pkgs_folder string) bo
 
 					if err23 == nil {
 
-						err24 := os.WriteFile(config.Options.CacheDir + "/" + filename, buffer, 0666)
+						err24 := sudo.WriteFile(config.Options.CacheDir + "/" + filename, buffer, 0666)
 
 						if err24 != nil {
 							console.Error("File pkgs/" + filename + " failed to copy")

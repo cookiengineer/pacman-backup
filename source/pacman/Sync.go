@@ -1,5 +1,6 @@
 package pacman
 
+import "pacman-backup/sudo"
 import "os"
 import "os/exec"
 
@@ -10,7 +11,14 @@ func Sync(config string) (error) {
 	os.Setenv("TZ", "Europe/Greenwich")
 	os.Setenv("LC_TIME", "en_US")
 
-	cmd1 := exec.Command("pacman", "-Sy", "--noconfirm", "--config", config)
+	var cmd1 *exec.Cmd
+
+	if NeedsSudo(config) == true {
+		cmd1 = sudo.Command("pacman", "-Sy", "--noconfirm", "--config", config)
+	} else {
+		cmd1 = exec.Command("pacman", "-Sy", "--noconfirm", "--config", config)
+	}
+
 	err1 := cmd1.Run()
 
 	if err1 == nil {

@@ -1,6 +1,7 @@
 package pacman
 
 import "pacman-backup/structs"
+import "pacman-backup/sudo"
 import "bytes"
 import "os"
 import "os/exec"
@@ -16,8 +17,14 @@ func CollectUpdates(console *structs.Console, config string) []structs.Package {
 
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
+	var cmd1   *exec.Cmd
 
-	cmd1 := exec.Command("pacman", "-Qu", "--noconfirm", "--config", config)
+	if NeedsSudo(config) == true {
+		cmd1 = sudo.Command("pacman", "-Qu", "--noconfirm", "--config", config)
+	} else {
+		cmd1 = exec.Command("pacman", "-Qu", "--noconfirm", "--config", config)
+	}
+
 	cmd1.Stdout = &stdout
 	cmd1.Stderr = &stderr
 	err1 := cmd1.Run()
@@ -45,7 +52,14 @@ func CollectUpdates(console *structs.Console, config string) []structs.Package {
 
 		}
 
-		cmd2 := exec.Command("pacman", "-Si", "--noconfirm", "--config", config)
+		var cmd2 *exec.Cmd
+
+		if NeedsSudo(config) == true {
+			cmd2 = sudo.Command("pacman", "-Si", "--noconfirm", "--config", config)
+		} else {
+			cmd2 = exec.Command("pacman", "-Si", "--noconfirm", "--config", config)
+		}
+
 		buffer, err2 := cmd2.Output()
 
 		if err2 == nil {

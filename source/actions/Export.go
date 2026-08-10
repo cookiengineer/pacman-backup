@@ -8,7 +8,7 @@ func Export(console *structs.Console, sync_folder string, pkgs_folder string) bo
 
 	console.Group("actions/Export")
 
-	config := pacman.InitConfig()
+	config := pacman.InitConfig("/etc/pacman.conf")
 
 	stat1, err1 := os.Stat(config.Options.DBPath + "/sync")
 	result_sync := true

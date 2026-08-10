@@ -1,5 +1,6 @@
 package pacman
 
+import "pacman-backup/sudo"
 import "bytes"
 import "errors"
 import "os/exec"
@@ -12,8 +13,15 @@ func Download(config string, name string) (error) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 
+	var cmd1 *exec.Cmd
+
 	// Download without dependency checks for better UI
-	cmd1 := exec.Command("pacman", "-Swdd", "--noconfirm", "--config", config, name)
+	if NeedsSudo(config) == true {
+		cmd1 = sudo.Command("pacman", "-Swdd", "--noconfirm", "--config", config, name)
+	} else {
+		cmd1 = exec.Command("pacman", "-Swdd", "--noconfirm", "--config", config, name)
+	}
+
 	cmd1.Stdout = &stdout
 	cmd1.Stderr = &stderr
 
