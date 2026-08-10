@@ -1,12 +1,12 @@
 package actions
 
-import "pacman-backup/console"
 import "pacman-backup/pacman"
+import "pacman-backup/structs"
 import "pacman-backup/types"
 import "os"
 import "strconv"
 
-func Cleanup(sync_folder string, pkgs_folder string) bool {
+func Cleanup(console *structs.Console, sync_folder string, pkgs_folder string) bool {
 
 	console.Group("actions/Cleanup")
 
@@ -127,7 +127,11 @@ func Cleanup(sync_folder string, pkgs_folder string) bool {
 		console.Error(err1.Error())
 	}
 
-	console.GroupEndResult(result, "actions/Cleanup")
+	if result {
+		console.GroupEnd("actions/Cleanup succeeded")
+	} else {
+		console.GroupEnd("actions/Cleanup failed")
+	}
 
 	return result
 

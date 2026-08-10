@@ -1,13 +1,12 @@
 package pacman
 
-import "pacman-backup/console"
 import "pacman-backup/structs"
 import "bytes"
 import "os"
 import "os/exec"
 import "strings"
 
-func CollectUpdates(config string) []structs.Package {
+func CollectUpdates(console *structs.Console, config string) []structs.Package {
 
 	update_index := make(map[string]bool, 0)
 	result := make([]structs.Package, 0)

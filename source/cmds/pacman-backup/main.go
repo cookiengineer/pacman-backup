@@ -1,8 +1,8 @@
 package main
 
 import "pacman-backup/actions"
-import "pacman-backup/console"
 import "pacman-backup/pacman"
+import "pacman-backup/structs"
 import "os"
 import "strings"
 
@@ -58,7 +58,7 @@ func isRootUser() bool {
 
 }
 
-func showUsage() {
+func showUsage(console *structs.Console) {
 
 	user := os.Getenv("USER")
 
@@ -71,7 +71,7 @@ func showUsage() {
 	console.Info("Offline Pacman Cache Management Tool")
 	console.Info("")
 
-	console.Group("Usage: tholian-guard [Action] [Folder]")
+	console.Group("Usage: pacman-backup [Action] [Folder]")
 	console.Log("")
 	console.Log("The [Folder] parameter is optional. If no folder is set, pacman's default folders will be used.")
 	console.Log("(/var/lib/pacman/sync and /var/cache/pacman/pkg)")
@@ -117,6 +117,8 @@ func showUsage() {
 
 func main() {
 
+	console := structs.NewConsole(os.Stdout, os.Stderr, 0)
+
 	if len(os.Args) == 4 {
 
 		action := os.Args[1]
@@ -136,14 +138,14 @@ func main() {
 					makeFolder(os.Args[3] + "/pkgs")
 				}
 
-				actions.Sync(mirror, os.Args[3] + "/sync", os.Args[3] + "/pkgs")
-				actions.Download(mirror, os.Args[3] + "/sync", os.Args[3] + "/pkgs")
+				actions.Sync(console, mirror, os.Args[3]+"/sync", os.Args[3]+"/pkgs")
+				actions.Download(console, mirror, os.Args[3]+"/sync", os.Args[3]+"/pkgs")
 
 			}
 
 		} else {
 
-			showUsage()
+			showUsage(console)
 			os.Exit(1)
 
 		}
@@ -165,7 +167,7 @@ func main() {
 					makeFolder(os.Args[2] + "/pkgs")
 				}
 
-				actions.Export(os.Args[2] + "/sync", os.Args[2] + "/pkgs")
+				actions.Export(console, os.Args[2]+"/sync", os.Args[2]+"/pkgs")
 
 			}
 
@@ -182,7 +184,7 @@ func main() {
 					makeFolder(os.Args[2] + "/pkgs")
 				}
 
-				actions.Cleanup(os.Args[2] + "/sync", os.Args[2] + "/pkgs")
+				actions.Cleanup(console, os.Args[2]+"/sync", os.Args[2]+"/pkgs")
 
 			}
 
@@ -195,8 +197,8 @@ func main() {
 				mirror := os.Args[2]
 
 				if isRootUser() {
-					actions.Sync(mirror, config.Options.DBPath + "/sync", config.Options.CacheDir)
-					actions.Download(mirror, config.Options.DBPath + "/sync", config.Options.CacheDir)
+					actions.Sync(console, mirror, config.Options.DBPath+"/sync", config.Options.CacheDir)
+					actions.Download(console, mirror, config.Options.DBPath+"/sync", config.Options.CacheDir)
 				} else {
 					console.Error("Please execute this command as the root user")
 				}
@@ -215,8 +217,8 @@ func main() {
 					makeFolder(os.Args[2] + "/pkgs")
 				}
 
-				actions.Sync(mirror, os.Args[2] + "/sync", os.Args[2] + "/pkgs")
-				actions.Download(mirror, os.Args[2] + "/sync", os.Args[2] + "/pkgs")
+				actions.Sync(console, mirror, os.Args[2]+"/sync", os.Args[2]+"/pkgs")
+				actions.Download(console, mirror, os.Args[2]+"/sync", os.Args[2]+"/pkgs")
 
 			}
 
@@ -234,7 +236,7 @@ func main() {
 				}
 
 				if isRootUser() {
-					actions.Import(os.Args[2] + "/sync", os.Args[2] + "/pkgs")
+					actions.Import(console, os.Args[2]+"/sync", os.Args[2]+"/pkgs")
 				} else {
 					console.Error("Please execute this command as the root user")
 				}
@@ -254,7 +256,7 @@ func main() {
 					makeFolder(os.Args[2] + "/pkgs")
 				}
 
-				actions.Serve(os.Args[2] + "/sync", os.Args[2] + "/pkgs")
+				actions.Serve(console, os.Args[2]+"/sync", os.Args[2]+"/pkgs")
 
 			}
 
@@ -275,7 +277,7 @@ func main() {
 				}
 
 				if isRootUser() {
-					actions.Upgrade(mirror, os.Args[2] + "/sync", os.Args[2] + "/pkgs")
+					actions.Upgrade(console, mirror, os.Args[2]+"/sync", os.Args[2]+"/pkgs")
 				} else {
 					console.Error("Please execute this command as the root user")
 				}
@@ -284,7 +286,7 @@ func main() {
 
 		} else {
 
-			showUsage()
+			showUsage(console)
 			os.Exit(1)
 
 		}
@@ -298,10 +300,10 @@ func main() {
 			// pacman-backup cleanup
 			config := pacman.InitConfig()
 
-			if isFolder(config.Options.DBPath + "/sync") && isFolder(config.Options.CacheDir) {
+			if isFolder(config.Options.DBPath+"/sync") && isFolder(config.Options.CacheDir) {
 
 				if isRootUser() {
-					actions.Cleanup(config.Options.DBPath + "/sync", config.Options.CacheDir)
+					actions.Cleanup(console, config.Options.DBPath+"/sync", config.Options.CacheDir)
 				} else {
 					console.Error("Please execute this command as the root user")
 				}
@@ -314,11 +316,15 @@ func main() {
 			config := pacman.InitConfig()
 			mirror := config.ToMirror()
 
+			console.Log(mirror)
+			console.Log(config.Options.DBPath)
+			console.Log(config.Options.CacheDir)
+
 			if isFolder(config.Options.CacheDir) {
 
 				if isRootUser() {
-					actions.Sync(mirror, config.Options.DBPath + "/sync", config.Options.CacheDir)
-					actions.Download(mirror, config.Options.DBPath + "/sync", config.Options.CacheDir)
+					actions.Sync(console, mirror, config.Options.DBPath+"/sync", config.Options.CacheDir)
+					actions.Download(console, mirror, config.Options.DBPath+"/sync", config.Options.CacheDir)
 				} else {
 					console.Error("Please execute this command as the root user")
 				}
@@ -330,7 +336,7 @@ func main() {
 			config := pacman.InitConfig()
 
 			if isFolder(config.Options.CacheDir) {
-				actions.Serve(config.Options.DBPath + "/sync", config.Options.CacheDir)
+				actions.Serve(console, config.Options.DBPath+"/sync", config.Options.CacheDir)
 			}
 
 		} else if action == "upgrade" {
@@ -341,7 +347,7 @@ func main() {
 			if isFolder(config.Options.CacheDir) {
 
 				if isRootUser() {
-					actions.Upgrade(mirror, config.Options.DBPath + "/sync", config.Options.CacheDir)
+					actions.Upgrade(console, mirror, config.Options.DBPath+"/sync", config.Options.CacheDir)
 				} else {
 					console.Error("Please execute this command as the root user")
 				}
@@ -350,14 +356,14 @@ func main() {
 
 		} else {
 
-			showUsage()
+			showUsage(console)
 			os.Exit(1)
 
 		}
 
 	} else {
 
-		showUsage()
+		showUsage(console)
 		os.Exit(1)
 
 	}

@@ -1,10 +1,10 @@
 package actions
 
-import "pacman-backup/console"
 import "pacman-backup/pacman"
+import "pacman-backup/structs"
 import "os"
 
-func Sync(mirror_url string, sync_folder string, pkgs_folder string) bool {
+func Sync(console *structs.Console, mirror_url string, sync_folder string, pkgs_folder string) bool {
 
 	console.Group("actions/Sync")
 
@@ -26,7 +26,11 @@ func Sync(mirror_url string, sync_folder string, pkgs_folder string) bool {
 
 	}
 
-	console.GroupEndResult(result, "actions/Sync")
+	if result {
+		console.GroupEnd("actions/Sync succeeded")
+	} else {
+		console.GroupEnd("actions/Sync failed")
+	}
 
 	return result
 

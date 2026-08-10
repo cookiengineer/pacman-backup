@@ -1,7 +1,7 @@
 package actions
 
-import "pacman-backup/console"
 import "pacman-backup/pacman"
+import "pacman-backup/structs"
 import "os"
 import "strconv"
 import "strings"
@@ -55,9 +55,9 @@ func isIgnored(config *pacman.Config, name_and_version string) bool {
 
 }
 
-func Upgrade(mirror_url string, sync_folder string, pkgs_folder string) bool {
+func Upgrade(console *structs.Console, mirror_url string, sync_folder string, pkgs_folder string) bool {
 
-	console.Group("Upgrade")
+	console.Group("actions/Upgrade")
 
 	var result bool
 
@@ -94,7 +94,7 @@ func Upgrade(mirror_url string, sync_folder string, pkgs_folder string) bool {
 	if err1 == nil {
 
 		packages := pacman.CollectFiles("/tmp/pacman-backup.conf", pkgs_folder)
-		updates := pacman.CollectUpdates("/tmp/pacman-backup.conf")
+		updates := pacman.CollectUpdates(console, "/tmp/pacman-backup.conf")
 
 		console.Log("Found " + strconv.Itoa(len(updates)) + " Updates")
 		console.Log("Found " + strconv.Itoa(len(packages)) + " Packages")
@@ -157,7 +157,11 @@ func Upgrade(mirror_url string, sync_folder string, pkgs_folder string) bool {
 
 	}
 
-	console.GroupEndResult(result, "Upgrade")
+	if result {
+		console.GroupEnd("actions/Upgrade succeeded")
+	} else {
+		console.GroupEnd("actions/Upgrade failed")
+	}
 
 	return result
 

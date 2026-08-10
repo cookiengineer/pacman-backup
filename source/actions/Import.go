@@ -1,12 +1,12 @@
 package actions
 
-import "pacman-backup/console"
 import "pacman-backup/pacman"
+import "pacman-backup/structs"
 import "os"
 
-func Import(sync_folder string, pkgs_folder string) bool {
+func Import(console *structs.Console, sync_folder string, pkgs_folder string) bool {
 
-	console.Group("Import")
+	console.Group("actions/Import")
 
 	config := pacman.InitConfig()
 
@@ -92,7 +92,11 @@ func Import(sync_folder string, pkgs_folder string) bool {
 
 	}
 
-	console.GroupEndResult(result_sync && result_pkgs, "Import")
+	if result_sync && result_pkgs {
+		console.GroupEnd("actions/Import succeeded")
+	} else {
+		console.GroupEnd("actions/Import failed")
+	}
 
 	return result_sync && result_pkgs
 

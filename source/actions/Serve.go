@@ -1,14 +1,14 @@
 package actions
 
-import "pacman-backup/console"
 import "pacman-backup/pacman"
+import "pacman-backup/structs"
 import "net/http"
 import "os"
 import "path/filepath"
 import "strconv"
 import "strings"
 
-func serveFileRange(response http.ResponseWriter, file string, start int64, end int64) {
+func serveFileRange(console *structs.Console, response http.ResponseWriter, file string, start int64, end int64) {
 
 	stat, err0 := os.Stat(file)
 
@@ -56,7 +56,7 @@ func serveFileRange(response http.ResponseWriter, file string, start int64, end 
 
 }
 
-func serveFile(response http.ResponseWriter, file string) {
+func serveFile(console *structs.Console, response http.ResponseWriter, file string) {
 
 	stat, err0 := os.Stat(file)
 
@@ -127,9 +127,9 @@ func serveFileHeader(response http.ResponseWriter, file string) {
 
 }
 
-func Serve(sync_folder string, pkgs_folder string) bool {
+func Serve(console *structs.Console, sync_folder string, pkgs_folder string) bool {
 
-	console.Group("Serve")
+	console.Group("actions/Serve")
 
 	var result bool
 
@@ -159,9 +159,9 @@ func Serve(sync_folder string, pkgs_folder string) bool {
 					if err1 == nil && err2 == nil {
 
 						if pacman.IsDatabaseFilename(file) {
-							serveFileRange(response, sync_folder + "/" + file, start, end)
+							serveFileRange(console, response, sync_folder + "/" + file, start, end)
 						} else if pacman.IsPackageFilename(file) {
-							serveFileRange(response, pkgs_folder + "/" + file, start, end)
+							serveFileRange(console, response, pkgs_folder + "/" + file, start, end)
 						} else {
 							response.WriteHeader(http.StatusNotFound)
 							response.Write([]byte{})
@@ -194,7 +194,7 @@ func Serve(sync_folder string, pkgs_folder string) bool {
 							if err1 == nil {
 
 								if stat.ModTime().After(time) {
-									serveFile(response, sync_folder + "/" + file)
+									serveFile(console, response, sync_folder + "/" + file)
 								} else {
 									response.WriteHeader(http.StatusNotModified)
 									response.Write([]byte{})
@@ -212,7 +212,7 @@ func Serve(sync_folder string, pkgs_folder string) bool {
 							if err1 == nil {
 
 								if stat.ModTime().After(time) {
-									serveFile(response, pkgs_folder + "/" + file)
+									serveFile(console, response, pkgs_folder + "/" + file)
 								} else {
 									response.WriteHeader(http.StatusNotModified)
 									response.Write([]byte{})
@@ -233,9 +233,9 @@ func Serve(sync_folder string, pkgs_folder string) bool {
 					} else {
 
 						if pacman.IsDatabaseFilename(file) {
-							serveFile(response, sync_folder + "/" + file)
+							serveFile(console, response, sync_folder + "/" + file)
 						} else if pacman.IsPackageFilename(file) {
-							serveFile(response, pkgs_folder + "/" + file)
+							serveFile(console, response, pkgs_folder + "/" + file)
 						} else {
 							response.WriteHeader(http.StatusNotFound)
 							response.Write([]byte{})
@@ -246,9 +246,9 @@ func Serve(sync_folder string, pkgs_folder string) bool {
 				} else {
 
 					if pacman.IsDatabaseFilename(file) {
-						serveFile(response, sync_folder + "/" + file)
+						serveFile(console, response, sync_folder + "/" + file)
 					} else if pacman.IsPackageFilename(file) {
-						serveFile(response, pkgs_folder + "/" + file)
+						serveFile(console, response, pkgs_folder + "/" + file)
 					} else {
 						response.WriteHeader(http.StatusNotFound)
 						response.Write([]byte{})
@@ -282,7 +282,11 @@ func Serve(sync_folder string, pkgs_folder string) bool {
 		result = true
 	}
 
-	console.GroupEndResult(result, "Serve")
+	if result {
+		console.GroupEnd("actions/Serve succeeded")
+	} else {
+		console.GroupEnd("actions/Serve failed")
+	}
 
 	return result
 

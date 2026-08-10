@@ -1,12 +1,12 @@
 package actions
 
-import "pacman-backup/console"
 import "pacman-backup/pacman"
+import "pacman-backup/structs"
 import "os"
 import "strconv"
 import "strings"
 
-func Download(mirror_url string, sync_folder string, pkgs_folder string) bool {
+func Download(console *structs.Console, mirror_url string, sync_folder string, pkgs_folder string) bool {
 
 	console.Group("actions/Download")
 
@@ -16,7 +16,7 @@ func Download(mirror_url string, sync_folder string, pkgs_folder string) bool {
 
 	if err1 == nil {
 
-		updates := pacman.CollectUpdates("/tmp/pacman-backup.conf")
+		updates := pacman.CollectUpdates(console, "/tmp/pacman-backup.conf")
 		result = true
 
 		if len(updates) > 0 {
@@ -55,7 +55,11 @@ func Download(mirror_url string, sync_folder string, pkgs_folder string) bool {
 		console.Error(err1.Error())
 	}
 
-	console.GroupEndResult(result, "actions/Download")
+	if result {
+		console.GroupEnd("actions/Download succeeded")
+	} else {
+		console.GroupEnd("actions/Download failed")
+	}
 
 	return result
 

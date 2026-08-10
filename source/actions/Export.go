@@ -1,12 +1,12 @@
 package actions
 
-import "pacman-backup/console"
 import "pacman-backup/pacman"
+import "pacman-backup/structs"
 import "os"
 
-func Export(sync_folder string, pkgs_folder string) bool {
+func Export(console *structs.Console, sync_folder string, pkgs_folder string) bool {
 
-	console.Group("Export")
+	console.Group("actions/Export")
 
 	config := pacman.InitConfig()
 
@@ -92,7 +92,11 @@ func Export(sync_folder string, pkgs_folder string) bool {
 
 	}
 
-	console.GroupEndResult(result_sync && result_pkgs, "Export")
+	if result_sync && result_pkgs {
+		console.GroupEnd("actions/Export succeeded")
+	} else {
+		console.GroupEnd("actions/Export failed")
+	}
 
 	return result_sync && result_pkgs
 
